@@ -10,6 +10,7 @@ import AdminLoginPage from './pages/AdminLoginPage'
 import AdminForgotPasswordPage from './pages/AdminForgotPasswordPage'
 import AdminResetPasswordPage from './pages/AdminResetPasswordPage'
 import AdminPositionsPage from './pages/AdminPositionsPage'
+import AdminUsersPage from './pages/AdminUsersPage'
 
 function App() {
   return (
@@ -70,9 +71,10 @@ function AppContent() {
         <Route path="/apply" element={<ApplyPage />} />
         <Route path="/admin/login" element={<AdminLoginPage />} />
         <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
-        <Route path="/admin/analytics" element={<ProtectedRoute><AdminAnalyticsPage /></ProtectedRoute>} />
+        <Route path="/admin/analytics" element={<ProtectedRoute permission="canViewAnalytics"><AdminAnalyticsPage /></ProtectedRoute>} />
         <Route path="/admin/applicants" element={<ProtectedRoute><AdminApplicantsPage /></ProtectedRoute>} />
-        <Route path="/admin/positions" element={<ProtectedRoute><AdminPositionsPage /></ProtectedRoute>} />
+        <Route path="/admin/positions" element={<ProtectedRoute permission="canManagePositions"><AdminPositionsPage /></ProtectedRoute>} />
+        <Route path="/admin/users" element={<ProtectedRoute permission="canManageUsers"><AdminUsersPage /></ProtectedRoute>} />
         <Route path="/admin/forgot-password" element={<AdminForgotPasswordPage />} />
         <Route path="/admin/reset-password" element={<AdminResetPasswordPage />} />
         <Route path="*" element={<Navigate to="/apply" replace />} />

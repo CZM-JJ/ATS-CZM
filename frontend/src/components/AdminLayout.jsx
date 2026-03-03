@@ -1,8 +1,12 @@
 import { NavLink } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useRole } from '../context/AuthContext'
 
 export default function AdminLayout({ children, pageTitle }) {
   const { user, logout } = useAuth()
+  const { isAdmin, canViewAnalytics, canManagePositions, canManageUsers } = useRole()
+
+  const ROLE_LABELS = { admin: 'Administrator', hr_manager: 'HR Manager', hr_supervisor: 'HR Supervisor', recruiter: 'Recruiter' }
 
   return (
     <section className="admin-shell">
@@ -19,15 +23,24 @@ export default function AdminLayout({ children, pageTitle }) {
             <NavLink to="/admin" end className={({ isActive }) => (isActive ? 'active' : '')}>
               Dashboard
             </NavLink>
-            <NavLink to="/admin/analytics" className={({ isActive }) => (isActive ? 'active' : '')}>
-              Analytics
-            </NavLink>
+            {canViewAnalytics && (
+              <NavLink to="/admin/analytics" className={({ isActive }) => (isActive ? 'active' : '')}>
+                Analytics
+              </NavLink>
+            )}
             <NavLink to="/admin/applicants" className={({ isActive }) => (isActive ? 'active' : '')}>
               Applicants
             </NavLink>
-            <NavLink to="/admin/positions" className={({ isActive }) => (isActive ? 'active' : '')}>
-              Positions
-            </NavLink>
+            {canManagePositions && (
+              <NavLink to="/admin/positions" className={({ isActive }) => (isActive ? 'active' : '')}>
+                Positions
+              </NavLink>
+            )}
+            {canManageUsers && (
+              <NavLink to="/admin/users" className={({ isActive }) => (isActive ? 'active' : '')}>
+                Users
+              </NavLink>
+            )}
           </nav>
           <div className="admin-profile">
             <div className="admin-avatar" aria-hidden="true">
@@ -35,7 +48,7 @@ export default function AdminLayout({ children, pageTitle }) {
             </div>
             <div>
               <p className="admin-name">{user?.name || 'User'}</p>
-              <p className="admin-role">{user?.role || 'recruiter'}</p>
+              <p className="admin-role">{ROLE_LABELS[user?.role] ?? user?.role ?? 'Staff'}</p>
             </div>
             <button
               type="button"

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
+import { useAuth, useRole } from '../context/AuthContext'
 import AdminLayout from '../components/AdminLayout'
 
 const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
@@ -24,6 +24,7 @@ const getInitials = (first, last) =>
 function AdminApplicantsPage() {
   const navigate = useNavigate()
   const { token, user } = useAuth()
+  const { canEdit, canDelete } = useRole()
 
   const [applicants, setApplicants]       = useState([])
   const [loading, setLoading]             = useState(false)
@@ -103,6 +104,7 @@ function AdminApplicantsPage() {
 
   const handleStatusChange = async (applicantId, newStatus, event) => {
     event.stopPropagation()
+    if (!canEdit) return
     setUpdatingId(applicantId)
     try {
       const response = await fetch(`${apiBase}/api/applicants/${applicantId}`, {
@@ -121,6 +123,21 @@ function AdminApplicantsPage() {
       setError('Failed to update status.')
     } finally {
       setUpdatingId(null)
+    }
+  }
+
+  const handleDelete = async (applicantId, e) => {
+    e.stopPropagation()
+    if (!window.confirm('Delete this applicant permanently? This cannot be undone.')) return
+    try {
+      const res = await fetch(`${apiBase}/api/applicants/${applicantId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (!res.ok) throw new Error()
+      setApplicants((prev) => prev.filter((a) => a.id !== applicantId))
+    } catch {
+      setError('Failed to delete applicant.')
     }
   }
 
@@ -453,8 +470,7 @@ function AdminApplicantsPage() {
                   <button type="button" className="admin-th-sort" onClick={() => handleSort('created_at')}>
                     Submitted {sort === 'created_at' ? (direction === 'asc' ? '▲' : '▼') : <span className="sort-icon">↕</span>}
                   </button>
-                </th>
-              </tr>
+                </th>                {canDelete && <th>Actions</th>}              </tr>
             </thead>
             <tbody>
               {loading ? (
@@ -497,8 +513,9 @@ function AdminApplicantsPage() {
                       <select
                         className={`admin-status-select admin-chip ${applicant.status}`}
                         value={applicant.status}
-                        disabled={updatingId === applicant.id}
+                        disabled={!canEdit || updatingId === applicant.id}
                         onChange={(e) => handleStatusChange(applicant.id, e.target.value, e)}
+                        title={!canEdit ? 'You do not have permission to change status' : undefined}
                       >
                         {statusOptions.map((o) => <option key={o} value={o}>{formatStatus(o)}</option>)}
                       </select>
@@ -506,6 +523,18 @@ function AdminApplicantsPage() {
                     <td>{applicant.email_address}</td>
                     <td>{applicant.contact_number}</td>
                     <td>{new Date(applicant.created_at).toLocaleDateString()}</td>
+                    {canDelete && (
+                      <td onClick={(e) => e.stopPropagation()}>
+                        <button
+                          type="button"
+                          className="btn btn-xs btn-error btn-outline"
+                          onClick={(e) => handleDelete(applicant.id, e)}
+                          title="Delete applicant"
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))
               ) : (

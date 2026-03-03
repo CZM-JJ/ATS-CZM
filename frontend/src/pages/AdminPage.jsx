@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { NavLink, useSearchParams } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
+import { useAuth, useRole } from '../context/AuthContext'
 import AdminLayout from '../components/AdminLayout'
 
 const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
@@ -37,6 +37,7 @@ const extractError = async (response) => {
 function AdminPage() {
   const [searchParams] = useSearchParams()
   const { token, user } = useAuth()
+  const { canEdit, canDelete } = useRole()
 
   const [adminMessage, setAdminMessage] = useState(null)
   const [adminError, setAdminError] = useState(null)
@@ -218,6 +219,21 @@ function AdminPage() {
 
   const formatStatus = (value) => value.split('_').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
 
+  const handleDeleteApplicant = async (applicantId) => {
+    if (!window.confirm('Delete this applicant permanently? This cannot be undone.')) return
+    try {
+      const res = await fetch(`${apiBase}/api/applicants/${applicantId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (!res.ok) throw new Error()
+      setApplicants((prev) => prev.filter((a) => a.id !== applicantId))
+      setSelectedId(null)
+    } catch {
+      setAdminError('Failed to delete applicant.')
+    }
+  }
+
   const handleStatusSave = async (applicantId, status) => {
     setAdminMessage(null)
     setAdminError(null)
@@ -372,33 +388,46 @@ function AdminPage() {
                       </span>
                     </div>
                   </div>
-                  <div className="admin-status">
-                    <label className="admin-status-label">Update status</label>
-                    <select
-                      className="select select-bordered"
-                      value={selectedApplicant.status}
-                      onChange={(event) => {
-                        const value = event.target.value
-                        setApplicants((previous) =>
-                          previous.map((item) =>
-                            item.id === selectedApplicant.id ? { ...item, status: value } : item
-                          )
-                        )
-                      }}
-                    >
-                      {statusOptions.map((option) => (
-                        <option key={option} value={option}>
-                          {formatStatus(option)}
-                        </option>
-                      ))}
-                    </select>
-                    <button
-                      type="button"
-                      className="btn btn-sm apply-submit"
-                      onClick={() => handleStatusSave(selectedApplicant.id, selectedApplicant.status)}
-                    >
-                      Save
-                    </button>
+                  <div className="admin-detail-head-actions">
+                    {canEdit && (
+                      <div className="admin-status">
+                        <label className="admin-status-label">Update status</label>
+                        <select
+                          className="select select-bordered"
+                          value={selectedApplicant.status}
+                          onChange={(event) => {
+                            const value = event.target.value
+                            setApplicants((previous) =>
+                              previous.map((item) =>
+                                item.id === selectedApplicant.id ? { ...item, status: value } : item
+                              )
+                            )
+                          }}
+                        >
+                          {statusOptions.map((option) => (
+                            <option key={option} value={option}>
+                              {formatStatus(option)}
+                            </option>
+                          ))}
+                        </select>
+                        <button
+                          type="button"
+                          className="btn btn-sm apply-submit"
+                          onClick={() => handleStatusSave(selectedApplicant.id, selectedApplicant.status)}
+                        >
+                          Save
+                        </button>
+                      </div>
+                    )}
+                    {canDelete && (
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-error btn-outline"
+                        onClick={() => handleDeleteApplicant(selectedApplicant.id)}
+                      >
+                        Delete Applicant
+                      </button>
+                    )}
                   </div>
                 </div>
                 <div className="admin-detail-grid">
