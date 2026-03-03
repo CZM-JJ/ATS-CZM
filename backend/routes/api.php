@@ -18,6 +18,7 @@ Route::middleware('auth:sanctum')->group(function (): void {
 	Route::get('me', [AuthController::class, 'me']);
 
 	Route::apiResource('applicants', ApplicantController::class);
+	Route::get('applicants/{applicant}/cv', [ApplicantController::class, 'cvDownload']);
 	Route::get('applicants/{applicant}/notes', [ApplicantNoteController::class, 'index']);
 	Route::post('applicants/{applicant}/notes', [ApplicantNoteController::class, 'store']);
 

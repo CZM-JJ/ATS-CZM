@@ -9,6 +9,7 @@ import AdminAnalyticsPage from './pages/AdminAnalyticsPage'
 import AdminLoginPage from './pages/AdminLoginPage'
 import AdminForgotPasswordPage from './pages/AdminForgotPasswordPage'
 import AdminResetPasswordPage from './pages/AdminResetPasswordPage'
+import AdminPositionsPage from './pages/AdminPositionsPage'
 
 function App() {
   return (
@@ -71,6 +72,7 @@ function AppContent() {
         <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
         <Route path="/admin/analytics" element={<ProtectedRoute><AdminAnalyticsPage /></ProtectedRoute>} />
         <Route path="/admin/applicants" element={<ProtectedRoute><AdminApplicantsPage /></ProtectedRoute>} />
+        <Route path="/admin/positions" element={<ProtectedRoute><AdminPositionsPage /></ProtectedRoute>} />
         <Route path="/admin/forgot-password" element={<AdminForgotPasswordPage />} />
         <Route path="/admin/reset-password" element={<AdminResetPasswordPage />} />
         <Route path="*" element={<Navigate to="/apply" replace />} />

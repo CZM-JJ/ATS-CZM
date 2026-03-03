@@ -9,8 +9,11 @@ export default function AdminLayout({ children, pageTitle }) {
       <header className="admin-topbar">
         <div className="admin-topbar-inner">
           <div className="admin-brand">
-            <p className="admin-kicker">CZARK MAK CORPORATION</p>
-            <span className="admin-brand-name">{pageTitle}</span>
+            <img src="/logoczark.png" alt="Czark Mak" className="admin-brand-logo" />
+            <div>
+              <p className="admin-kicker">CZARK MAK CORPORATION</p>
+              <span className="admin-brand-name">{pageTitle}</span>
+            </div>
           </div>
           <nav className="admin-nav">
             <NavLink to="/admin" end className={({ isActive }) => (isActive ? 'active' : '')}>
@@ -21,6 +24,9 @@ export default function AdminLayout({ children, pageTitle }) {
             </NavLink>
             <NavLink to="/admin/applicants" className={({ isActive }) => (isActive ? 'active' : '')}>
               Applicants
+            </NavLink>
+            <NavLink to="/admin/positions" className={({ isActive }) => (isActive ? 'active' : '')}>
+              Positions
             </NavLink>
           </nav>
           <div className="admin-profile">
@@ -45,6 +51,10 @@ export default function AdminLayout({ children, pageTitle }) {
       <div className="admin-content">
         {children}
       </div>
+
+      <footer className="admin-footer">
+        <p>© {new Date().getFullYear()} Czark Mak Corporation · ATS v2.0 · Internal use only</p>
+      </footer>
     </section>
   )
 }

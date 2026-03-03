@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f3d2e"/>
+      <stop offset="100%" style="stop-color:#1a6644"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Rounded app-icon background -->
+  <rect width="64" height="64" rx="14" ry="14" fill="url(#bg)"/>
+
+  <!-- Gold accent border -->
+  <rect width="64" height="64" rx="14" ry="14" fill="none" stroke="rgba(200,164,65,0.5)" stroke-width="1.5"/>
+
+  <!-- "C" lettermark in brand gold -->
+  <text
+    x="32" y="44"
+    font-family="Georgia, 'Times New Roman', serif"
+    font-weight="700"
+    font-size="36"
+    fill="#c8a441"
+    text-anchor="middle"
+    dominant-baseline="auto"
+    letter-spacing="-1"
+  >C</text>
+</svg>

@@ -4,10 +4,11 @@ namespace App\Notifications;
 
 use App\Models\Applicant;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Messages\MailMessage;
 
-class ApplicantStatusUpdated extends Notification
+class ApplicantStatusUpdated extends Notification implements ShouldQueue
 {
     use Queueable;
 

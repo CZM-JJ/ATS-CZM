@@ -40,8 +40,21 @@ function AdminApplicantsPage() {
   const [sort, setSort]                   = useState('created_at')
   const [direction, setDirection]         = useState('desc')
   const [updatingId, setUpdatingId]       = useState(null)
+  const [perPage, setPerPage]             = useState(20)
 
-  const activeFilterCount = [searchTerm, statusFilter, positionFilter, startDate, endDate].filter(Boolean).length
+  // Advanced filters
+  const [showAdvanced, setShowAdvanced]       = useState(false)
+  const [genderFilter, setGenderFilter]       = useState('')
+  const [educationFilter, setEducationFilter] = useState('')
+  const [vacancyFilter, setVacancyFilter]     = useState('')
+  const [locationFilter, setLocationFilter]   = useState('')
+  const [salaryMin, setSalaryMin]             = useState('')
+  const [salaryMax, setSalaryMax]             = useState('')
+  const [experienceMin, setExperienceMin]     = useState('')
+  const [experienceMax, setExperienceMax]     = useState('')
+
+  const advancedFilterCount = [genderFilter, educationFilter, vacancyFilter, locationFilter, salaryMin, salaryMax, experienceMin, experienceMax].filter(Boolean).length
+  const activeFilterCount = [searchTerm, statusFilter, positionFilter, startDate, endDate].filter(Boolean).length + advancedFilterCount
 
   const handleSort = (field) => {
     if (sort === field) {
@@ -150,6 +163,14 @@ function AdminApplicantsPage() {
     setPositionFilter('')
     setStartDate('')
     setEndDate('')
+    setGenderFilter('')
+    setEducationFilter('')
+    setVacancyFilter('')
+    setLocationFilter('')
+    setSalaryMin('')
+    setSalaryMax('')
+    setExperienceMin('')
+    setExperienceMax('')
   }
 
   useEffect(() => {
@@ -159,7 +180,7 @@ function AdminApplicantsPage() {
 
   useEffect(() => {
     setPage(1)
-  }, [searchTerm, statusFilter, positionFilter, startDate, endDate])
+  }, [searchTerm, statusFilter, positionFilter, startDate, endDate, genderFilter, educationFilter, vacancyFilter, locationFilter, salaryMin, salaryMax, experienceMin, experienceMax, perPage])
 
   useEffect(() => {
     if (!token) return
@@ -170,13 +191,22 @@ function AdminApplicantsPage() {
         position: positionFilter || undefined,
         start_date: startDate || undefined,
         end_date: endDate || undefined,
+        gender: genderFilter || undefined,
+        education: educationFilter || undefined,
+        vacancy_source: vacancyFilter || undefined,
+        location: locationFilter || undefined,
+        salary_min: salaryMin || undefined,
+        salary_max: salaryMax || undefined,
+        experience_min: experienceMin || undefined,
+        experience_max: experienceMax || undefined,
         sort,
         direction,
         page,
+        per_page: perPage,
       })
     }, 300)
     return () => clearTimeout(timer)
-  }, [token, searchTerm, statusFilter, positionFilter, startDate, endDate, sort, direction, page])
+  }, [token, searchTerm, statusFilter, positionFilter, startDate, endDate, genderFilter, educationFilter, vacancyFilter, locationFilter, salaryMin, salaryMax, experienceMin, experienceMax, sort, direction, page, perPage])
 
   const getGreeting = () => {
     const h = new Date().getHours()
@@ -189,8 +219,8 @@ function AdminApplicantsPage() {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
   })
 
-  const firstItem = total === 0 ? 0 : (page - 1) * 20 + 1
-  const lastItem  = Math.min(page * 20, total)
+  const firstItem = total === 0 ? 0 : (page - 1) * perPage + 1
+  const lastItem  = Math.min(page * perPage, total)
 
   return (
     <AdminLayout pageTitle="Applicants">
@@ -225,12 +255,12 @@ function AdminApplicantsPage() {
         </div>
 
         <div className="admin-table-filters">
-          <label>
+          <label style={{ flex: '2 1 200px' }}>
             <span>Search</span>
             <input
               className="input input-bordered"
               type="search"
-              placeholder="Name, email, position"
+              placeholder="Name, email, phone, position, address"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -257,7 +287,147 @@ function AdminApplicantsPage() {
             <span>To</span>
             <input className="input input-bordered" type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
           </label>
+          <button
+            type="button"
+            className={`adv-filter-toggle ${showAdvanced ? 'active' : ''}`}
+            onClick={() => setShowAdvanced((v) => !v)}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="10" y1="18" x2="14" y2="18"/></svg>
+            Filters{advancedFilterCount > 0 ? ` (${advancedFilterCount})` : ''}
+            <span className={`adv-filter-chevron ${showAdvanced ? 'open' : ''}`}>▾</span>
+          </button>
         </div>
+
+        {/* ── Advanced filter panel ── */}
+        {showAdvanced && (
+          <div className="adv-filter-panel">
+            <div className="adv-filter-grid">
+              <label>
+                <span>Gender</span>
+                <select className="select select-bordered" value={genderFilter} onChange={(e) => setGenderFilter(e.target.value)}>
+                  <option value="">Any</option>
+                  <option>Male</option>
+                  <option>Female</option>
+                  <option>Other</option>
+                </select>
+              </label>
+              <label>
+                <span>Education</span>
+                <select className="select select-bordered" value={educationFilter} onChange={(e) => setEducationFilter(e.target.value)}>
+                  <option value="">Any</option>
+                  <option>Elementary</option>
+                  <option>High School</option>
+                  <option>Senior High</option>
+                  <option>Vocational</option>
+                  <option>College</option>
+                  <option>Post Grad</option>
+                </select>
+              </label>
+              <label>
+                <span>Vacancy source</span>
+                <select className="select select-bordered" value={vacancyFilter} onChange={(e) => setVacancyFilter(e.target.value)}>
+                  <option value="">Any</option>
+                  <option>JobStreet</option>
+                  <option>LinkedIn</option>
+                  <option>Indeed</option>
+                  <option>Kalibrr</option>
+                  <option>Facebook / Social Media</option>
+                  <option>Company Website</option>
+                  <option>Referral from Employee</option>
+                  <option>Job Fair</option>
+                  <option>Walk-in</option>
+                  <option>Other</option>
+                </select>
+              </label>
+              <label>
+                <span>Work location</span>
+                <input
+                  className="input input-bordered"
+                  type="text"
+                  placeholder="e.g. Makati"
+                  value={locationFilter}
+                  onChange={(e) => setLocationFilter(e.target.value)}
+                />
+              </label>
+              <label>
+                <span>Min salary (₱)</span>
+                <input
+                  className="input input-bordered"
+                  type="number"
+                  min="0"
+                  placeholder="e.g. 20000"
+                  value={salaryMin}
+                  onChange={(e) => setSalaryMin(e.target.value)}
+                />
+              </label>
+              <label>
+                <span>Max salary (₱)</span>
+                <input
+                  className="input input-bordered"
+                  type="number"
+                  min="0"
+                  placeholder="e.g. 80000"
+                  value={salaryMax}
+                  onChange={(e) => setSalaryMax(e.target.value)}
+                />
+              </label>
+              <label>
+                <span>Min experience (yrs)</span>
+                <input
+                  className="input input-bordered"
+                  type="number"
+                  min="0"
+                  placeholder="e.g. 2"
+                  value={experienceMin}
+                  onChange={(e) => setExperienceMin(e.target.value)}
+                />
+              </label>
+              <label>
+                <span>Max experience (yrs)</span>
+                <input
+                  className="input input-bordered"
+                  type="number"
+                  min="0"
+                  placeholder="e.g. 10"
+                  value={experienceMax}
+                  onChange={(e) => setExperienceMax(e.target.value)}
+                />
+              </label>
+              <label>
+                <span>Sort by</span>
+                <select className="select select-bordered" value={sort} onChange={(e) => { setSort(e.target.value); setPage(1) }}>
+                  <option value="created_at">Date submitted</option>
+                  <option value="last_name">Last name</option>
+                  <option value="first_name">First name</option>
+                  <option value="status">Status</option>
+                  <option value="expected_salary">Expected salary</option>
+                  <option value="total_work_experience_years">Experience</option>
+                </select>
+              </label>
+              <label>
+                <span>Order</span>
+                <select className="select select-bordered" value={direction} onChange={(e) => { setDirection(e.target.value); setPage(1) }}>
+                  <option value="desc">Descending</option>
+                  <option value="asc">Ascending</option>
+                </select>
+              </label>
+              <label>
+                <span>Per page</span>
+                <select className="select select-bordered" value={perPage} onChange={(e) => setPerPage(Number(e.target.value))}>
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                </select>
+              </label>
+            </div>
+            {advancedFilterCount > 0 && (
+              <button type="button" className="adv-filter-clear" onClick={clearFilters}>
+                Clear all filters ✕
+              </button>
+            )}
+          </div>
+        )}
 
         {error ? <div className="admin-alert error">{error}</div> : null}
 

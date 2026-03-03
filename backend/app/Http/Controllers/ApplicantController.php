@@ -25,16 +25,56 @@ class ApplicantController extends Controller
                     ->where('first_name', 'like', "%{$search}%")
                     ->orWhere('last_name', 'like', "%{$search}%")
                     ->orWhere('email_address', 'like', "%{$search}%")
-                    ->orWhere('position_applied_for', 'like', "%{$search}%");
+                    ->orWhere('contact_number', 'like', "%{$search}%")
+                    ->orWhere('position_applied_for', 'like', "%{$search}%")
+                    ->orWhere('permanent_address', 'like', "%{$search}%");
             });
         }
 
+        // Single status (legacy) or multi-status via comma-separated string
         if ($request->filled('status')) {
-            $query->where('status', $request->string('status'));
+            $statuses = array_filter(array_map('trim', explode(',', $request->string('status'))));
+            if (count($statuses) === 1) {
+                $query->where('status', $statuses[0]);
+            } elseif (count($statuses) > 1) {
+                $query->whereIn('status', $statuses);
+            }
         }
 
         if ($request->filled('position')) {
             $query->where('position_applied_for', $request->string('position'));
+        }
+
+        if ($request->filled('gender')) {
+            $query->where('gender', $request->string('gender'));
+        }
+
+        if ($request->filled('education')) {
+            $query->where('highest_education_level', $request->string('education'));
+        }
+
+        if ($request->filled('vacancy_source')) {
+            $query->where('vacancy_source', $request->string('vacancy_source'));
+        }
+
+        if ($request->filled('location')) {
+            $query->where('preferred_work_location', 'like', '%' . $request->string('location') . '%');
+        }
+
+        if ($request->filled('salary_min')) {
+            $query->where('expected_salary', '>=', $request->numeric('salary_min'));
+        }
+
+        if ($request->filled('salary_max')) {
+            $query->where('expected_salary', '<=', $request->numeric('salary_max'));
+        }
+
+        if ($request->filled('experience_min')) {
+            $query->where('total_work_experience_years', '>=', $request->numeric('experience_min'));
+        }
+
+        if ($request->filled('experience_max')) {
+            $query->where('total_work_experience_years', '<=', $request->numeric('experience_max'));
         }
 
         $startDate = $request->date('start_date');
@@ -49,7 +89,7 @@ class ApplicantController extends Controller
 
         $sort = $request->string('sort', 'created_at');
         $direction = $request->string('direction', 'desc');
-        $allowedSorts = ['created_at', 'last_name', 'status'];
+        $allowedSorts = ['created_at', 'last_name', 'first_name', 'status', 'expected_salary', 'total_work_experience_years'];
         $allowedDirections = ['asc', 'desc'];
 
         if (!in_array($sort, $allowedSorts, true)) {
@@ -118,6 +158,27 @@ class ApplicantController extends Controller
         return response()->noContent();
     }
 
+    public function cvDownload(Applicant $applicant)
+    {
+        if (!$applicant->cv_path) {
+            return response()->json(['message' => 'No CV uploaded for this applicant.'], 404);
+        }
+
+        if (!Storage::disk('public')->exists($applicant->cv_path)) {
+            return response()->json(['message' => 'CV file not found on storage.'], 404);
+        }
+
+        $fullPath  = Storage::disk('public')->path($applicant->cv_path);
+        $mimeType  = Storage::disk('public')->mimeType($applicant->cv_path);
+        $extension = pathinfo($applicant->cv_path, PATHINFO_EXTENSION);
+        $filename  = $applicant->last_name . '_' . $applicant->first_name . '_CV.' . $extension;
+
+        return response()->file($fullPath, [
+            'Content-Type'        => $mimeType,
+            'Content-Disposition' => 'inline; filename="' . $filename . '"',
+        ]);
+    }
+
     private function validateApplicant(Request $request, bool $isUpdate = false): array
     {
         $required = $isUpdate ? 'sometimes|required' : 'required';
@@ -131,7 +192,6 @@ class ApplicantController extends Controller
             'gender' => [$required, 'string', 'max:50'],
             'civil_status' => [$required, 'string', 'max:50'],
             'birthdate' => [$required, 'date'],
-            'age' => [$required, 'integer', 'min:0', 'max:120'],
             'highest_education_level' => [$required, 'string', 'max:50'],
             'bachelors_degree_course' => ['nullable', 'string', 'max:255'],
             'year_graduated' => ['nullable', 'integer', 'min:1900', 'max:2100'],
@@ -154,6 +214,7 @@ class ApplicantController extends Controller
     {
         $data = $this->validateApplicant($request);
         $data['status'] = 'submitted';
+        $data['age'] = \Carbon\Carbon::parse($data['birthdate'])->age;
 
         if ($request->hasFile('upload_cv')) {
             $data['cv_path'] = $request->file('upload_cv')->store('cvs', 'public');

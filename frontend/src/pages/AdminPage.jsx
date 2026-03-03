@@ -54,6 +54,11 @@ function AdminPage() {
   const [lastPage, setLastPage] = useState(1)
   const [total, setTotal] = useState(0)
 
+  const [showResume, setShowResume]       = useState(false)
+  const [resumeBlobUrl, setResumeBlobUrl] = useState(null)
+  const [resumeLoading, setResumeLoading] = useState(false)
+  const [resumeError, setResumeError]     = useState(null)
+
   const loadApplicants = async (activeToken, filters = {}, preferredId = null) => {
     setLoadingApplicants(true)
     try {
@@ -145,7 +150,38 @@ function AdminPage() {
     }
 
     loadNotes(token, selectedId)
+
+    // Reset resume viewer whenever a different applicant is selected
+    setShowResume(false)
+    setResumeError(null)
+    if (resumeBlobUrl) {
+      URL.revokeObjectURL(resumeBlobUrl)
+      setResumeBlobUrl(null)
+    }
   }, [token, selectedId])
+
+  const loadResumeBlobUrl = async () => {
+    if (resumeBlobUrl) {
+      setShowResume(true)
+      return
+    }
+    setResumeLoading(true)
+    setResumeError(null)
+    try {
+      const response = await fetch(`${apiBase}/api/applicants/${selectedId}/cv`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (!response.ok) throw new Error('Could not load resume.')
+      const blob = await response.blob()
+      const url  = URL.createObjectURL(blob)
+      setResumeBlobUrl(url)
+      setShowResume(true)
+    } catch (err) {
+      setResumeError(err.message || 'Failed to load resume.')
+    } finally {
+      setResumeLoading(false)
+    }
+  }
 
   const handleNoteSubmit = async (event) => {
     event.preventDefault()
@@ -438,22 +474,103 @@ function AdminPage() {
                     </dl>
                   </div>
                 </div>
+                {/* ── Resume / CV Viewer ── */}
+                <div className="admin-resume-section">
+                  <div className="admin-resume-head">
+                    <h4 className="admin-detail-section-title" style={{ margin: 0, border: 0, padding: 0 }}>📄 Resume / CV</h4>
+                    {selectedApplicant.cv_path ? (
+                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                        {showResume && (
+                          <button
+                            type="button"
+                            className="admin-cv-btn admin-cv-btn-outline"
+                            onClick={() => setShowResume(false)}
+                          >
+                            Hide
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          className="admin-cv-btn"
+                          disabled={resumeLoading}
+                          onClick={showResume ? () => setShowResume(false) : loadResumeBlobUrl}
+                        >
+                          {resumeLoading ? '⏳ Loading…' : showResume ? '▲ Hide Resume' : '👁 View Resume'}
+                        </button>
+                        <a
+                          className="admin-cv-btn admin-cv-btn-outline"
+                          href={`${apiBase}/api/applicants/${selectedApplicant.id}/cv`}
+                          target="_blank"
+                          rel="noreferrer"
+                          onClick={async (e) => {
+                            // add token to download via a temporary anchor with blob
+                            e.preventDefault()
+                            try {
+                              const res = await fetch(`${apiBase}/api/applicants/${selectedApplicant.id}/cv`, {
+                                headers: { Authorization: `Bearer ${token}` },
+                              })
+                              const blob = await res.blob()
+                              const url = URL.createObjectURL(blob)
+                              const a = document.createElement('a')
+                              a.href = url
+                              a.download = `${selectedApplicant.last_name}_${selectedApplicant.first_name}_CV.${selectedApplicant.cv_path.split('.').pop()}`
+                              a.click()
+                              URL.revokeObjectURL(url)
+                            } catch (_) {}
+                          }}
+                        >
+                          ⬇ Download
+                        </a>
+                      </div>
+                    ) : (
+                      <span className="admin-cv-missing">No CV uploaded</span>
+                    )}
+                  </div>
+                  {resumeError && <div className="admin-alert error" style={{ marginTop: '0.5rem' }}>{resumeError}</div>}
+                  {showResume && resumeBlobUrl && (
+                    <div className="admin-resume-viewer">
+                      {selectedApplicant.cv_path?.toLowerCase().endsWith('.pdf') ? (
+                        <iframe
+                          src={resumeBlobUrl}
+                          title="Resume Preview"
+                          className="admin-resume-iframe"
+                        />
+                      ) : (
+                        <div className="admin-resume-nopreview">
+                          <span>Preview not available for .{selectedApplicant.cv_path.split('.').pop().toUpperCase()} files.</span>
+                          <span>Use the Download button above to open it.</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
                 <div className="admin-notes">
                   <div className="admin-notes-head">
                     <h4>📝 HR Notes</h4>
                     {notesLoading ? <span className="admin-notes-loading">Loading...</span> : null}
                   </div>
                   <form className="admin-note-form" onSubmit={handleNoteSubmit}>
-                    <textarea
-                      className="textarea textarea-bordered"
-                      placeholder="Add a note for recruiters..."
-                      value={noteDraft}
-                      onChange={(event) => setNoteDraft(event.target.value)}
-                      rows={3}
-                    />
-                    <button type="submit" className="btn btn-sm apply-submit" disabled={noteSaving}>
-                      {noteSaving ? 'Saving...' : 'Add note'}
-                    </button>
+                    <div className="admin-note-composer">
+                      <textarea
+                        className="admin-note-textarea"
+                        placeholder="Write a note for recruiters…"
+                        value={noteDraft}
+                        onChange={(event) => setNoteDraft(event.target.value)}
+                        rows={3}
+                      />
+                      <div className="admin-note-composer-footer">
+                        <span className="admin-note-composer-hint">
+                          {noteDraft.length > 0 ? `${noteDraft.length} characters` : 'Visible to all recruiters'}
+                        </span>
+                        <button type="submit" className="admin-note-submit" disabled={noteSaving || !noteDraft.trim()}>
+                          {noteSaving ? (
+                            <><span className="admin-note-spinner" />Saving…</>
+                          ) : (
+                            <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>Add note</>
+                          )}
+                        </button>
+                      </div>
+                    </div>
                   </form>
                   {notesError ? <div className="admin-alert error">{notesError}</div> : null}
                   {notes.length ? (
@@ -477,18 +594,6 @@ function AdminPage() {
                   ) : null}
                 </div>
                 <div className="admin-detail-footer">
-                  {selectedApplicant.cv_path ? (
-                    <a
-                      className="admin-cv-btn"
-                      href={`${apiBase}/storage/${selectedApplicant.cv_path}`}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      📄 View CV
-                    </a>
-                  ) : (
-                    <span className="admin-cv-missing">No CV uploaded</span>
-                  )}
                   <span className="admin-submitted-date">
                     Submitted {new Date(selectedApplicant.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                   </span>

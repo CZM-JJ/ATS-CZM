@@ -2,17 +2,34 @@ import { useState } from 'react'
 import { useNavigate, Navigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
+// ─── To add your own image or GIF: ───────────────────────────────────────────
+//  Option A (recommended): Drop the file in frontend/public/ and reference it
+//    as a plain string, e.g. heroImage = '/banner.gif'
+//  Option B: Drop the file in frontend/src/assets/ and import it:
+//    import heroImage from '../assets/banner.gif'
+//  Then pass heroImage as the `src` of the <img> below where indicated.
+//  To hide the visual panel entirely, set SHOW_VISUAL_PANEL to false.
+// ─────────────────────────────────────────────────────────────────────────────
+const HERO_IMAGE = null          // e.g. '/banner.gif' or imported asset
+const SHOW_VISUAL_PANEL = true   // set false to hide the left panel
+
 const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+
+const FEATURES = [
+  { icon: '📋', label: 'Applicant Tracking',  desc: 'Monitor every candidate through the full hiring pipeline.' },
+  { icon: '💬', label: 'Smart Notes',          desc: 'Attach reviewers notes to any applicant record instantly.' },
+  { icon: '📊', label: 'Live Analytics',       desc: 'Real-time dashboards across positions and statuses.' },
+  { icon: '🔔', label: 'Email Alerts',         desc: 'Auto-notify candidates when their status changes.' },
+]
 
 export default function AdminLoginPage() {
   const { token, login } = useAuth()
   const navigate = useNavigate()
-  const [form, setForm] = useState({ email: '', password: '' })
+  const [form, setForm]               = useState({ email: '', password: '' })
   const [showPassword, setShowPassword] = useState(false)
-  const [error, setError] = useState(null)
-  const [loading, setLoading] = useState(false)
+  const [error, setError]             = useState(null)
+  const [loading, setLoading]         = useState(false)
 
-  // Already logged in — go straight to dashboard
   if (token) return <Navigate to="/admin" replace />
 
   const handleChange = (e) => {
@@ -24,24 +41,20 @@ export default function AdminLoginPage() {
     e.preventDefault()
     setError(null)
     setLoading(true)
-
     try {
       const res = await fetch(`${apiBase}/api/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       })
-
       if (!res.ok) {
         const payload = await res.json().catch(() => ({}))
-        const msg =
-          payload?.errors
-            ? Object.values(payload.errors).flat()[0]
-            : payload?.message || 'Invalid credentials.'
+        const msg = payload?.errors
+          ? Object.values(payload.errors).flat()[0]
+          : payload?.message || 'Invalid credentials.'
         setError(msg)
         return
       }
-
       const payload = await res.json()
       login(payload.token)
       navigate('/admin', { replace: true })
@@ -53,67 +66,176 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="admin-auth-shell">
-      <div className="admin-auth-visual">
-        <div className="admin-auth-orb" />
-        <div className="admin-auth-orb is-secondary" />
-        <div className="admin-auth-grid" />
-      </div>
+    <div className={`login-shell${!SHOW_VISUAL_PANEL ? ' login-shell--centered' : ''}`}>
 
-      <form className="admin-auth-form" onSubmit={handleSubmit}>
-        <div className="admin-auth-brand">
-          <div className="admin-auth-logo">CZM</div>
-          <div>
-            <p className="admin-auth-company">CZARK MAK CORPORATION</p>
-            <h2 className="admin-auth-heading">Admin Portal</h2>
+      {/* ── LEFT — visual / hero panel ── */}
+      {SHOW_VISUAL_PANEL && (
+        <div className="login-visual">
+          <div className="login-visual-orb orb-a" />
+          <div className="login-visual-orb orb-b" />
+          <div className="login-visual-grid" />
+
+          <div className="login-visual-inner">
+            {/* ── Brand mark ── */}
+            <div className="login-vis-brand">
+              <div className="login-vis-logo">
+                <img src="/logoczark.png" alt="Czark Mak Corporation" className="login-vis-logo-img" />
+              </div>
+              <div>
+                <p className="login-vis-company">CZARK MAK CORPORATION</p>
+                <p className="login-vis-tagline">Applicant Tracking System</p>
+              </div>
+            </div>
+
+            {/* ── Hero image / GIF placeholder ── */}
+            <div className="login-vis-media">
+              {HERO_IMAGE ? (
+                <img src={HERO_IMAGE} alt="ATS illustration" className="login-vis-img" />
+              ) : (
+                <div className="login-vis-placeholder">
+                  <span>🏢</span>
+                  <p>Add your image or GIF here</p>
+                  <small>Set the HERO_IMAGE constant at the top of this file</small>
+                </div>
+              )}
+            </div>
+
+            {/* ── Feature cards ── */}
+            <ul className="login-feature-list">
+              {FEATURES.map((f) => (
+                <li key={f.label} className="login-feature-item">
+                  <span className="login-feature-icon">{f.icon}</span>
+                  <div>
+                    <strong>{f.label}</strong>
+                    <p>{f.desc}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+
+            {/* ── Bottom note ── */}
+            <p className="login-vis-note">
+              Secure access · Admin only · v2.0
+            </p>
           </div>
         </div>
+      )}
 
-        <label className="admin-label">
-          <span>Email</span>
-          <input
-            className="input input-bordered input-lg w-full"
-            type="email"
-            name="email"
-            value={form.email}
-            onChange={handleChange}
-            required
-            autoFocus
-          />
-        </label>
+      {/* ── RIGHT — login form ── */}
+      <div className="login-form-side">
+        <form className="login-form" onSubmit={handleSubmit} noValidate>
 
-        <label className="admin-label">
-          <span>Password</span>
-          <div className="admin-password-field">
-            <input
-              className="input input-bordered input-lg w-full"
-              type={showPassword ? 'text' : 'password'}
-              name="password"
-              value={form.password}
-              onChange={handleChange}
-              required
-            />
-            <button
-              type="button"
-              className="admin-toggle"
-              onClick={() => setShowPassword((p) => !p)}
-              aria-label={showPassword ? 'Hide password' : 'Show password'}
-            >
-              {showPassword ? 'Hide' : 'Show'}
-            </button>
+          {/* Brand (shown when visual panel is hidden) */}
+          {!SHOW_VISUAL_PANEL && (
+            <div className="admin-auth-brand" style={{ marginBottom: '1.5rem' }}>
+              <div className="admin-auth-logo">
+                <img src="/logoczark.png" alt="Czark Mak Corporation" className="login-vis-logo-img" />
+              </div>
+              <div>
+                <p className="admin-auth-company">CZARK MAK CORPORATION</p>
+                <h2 className="admin-auth-heading">Admin Portal</h2>
+              </div>
+            </div>
+          )}
+
+          {/* Heading */}
+          <div className="login-form-head">
+            <h1 className="login-form-title">Welcome back</h1>
+            <p className="login-form-sub">Sign in to the admin portal to continue.</p>
           </div>
-        </label>
 
-        <a className="admin-link" href="/admin/forgot-password">
-          Forgot password?
-        </a>
+          {/* Error banner */}
+          {error && (
+            <div className="login-error" role="alert">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+              {error}
+            </div>
+          )}
 
-        <button type="submit" className="btn btn-lg apply-submit w-full" disabled={loading}>
-          {loading ? 'Signing in...' : 'Sign in'}
-        </button>
+          {/* Email */}
+          <div className="login-field">
+            <label className="login-field-label" htmlFor="lf-email">Email address</label>
+            <div className="login-input-wrap">
+              <svg className="login-input-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+              </svg>
+              <input
+                id="lf-email"
+                className="login-input"
+                type="email"
+                name="email"
+                placeholder="admin@company.com"
+                value={form.email}
+                onChange={handleChange}
+                required
+                autoFocus
+                autoComplete="email"
+              />
+            </div>
+          </div>
 
-        {error ? <span className="admin-alert error">{error}</span> : null}
-      </form>
+          {/* Password */}
+          <div className="login-field">
+            <div className="login-field-row">
+              <label className="login-field-label" htmlFor="lf-password">Password</label>
+              <a className="login-forgot" href="/admin/forgot-password">Forgot password?</a>
+            </div>
+            <div className="login-input-wrap">
+              <svg className="login-input-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+              <input
+                id="lf-password"
+                className="login-input"
+                type={showPassword ? 'text' : 'password'}
+                name="password"
+                placeholder="••••••••"
+                value={form.password}
+                onChange={handleChange}
+                required
+                autoComplete="current-password"
+              />
+              <button
+                type="button"
+                className="login-eye-btn"
+                onClick={() => setShowPassword((p) => !p)}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                ) : (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Submit */}
+          <button
+            type="submit"
+            className="login-submit"
+            disabled={loading}
+          >
+            {loading ? (
+              <>
+                <span className="login-spinner" aria-hidden="true" />
+                Signing in…
+              </>
+            ) : (
+              <>
+                Sign in
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+              </>
+            )}
+          </button>
+
+          <p className="login-form-footer">
+            Protected area — authorised personnel only.
+          </p>
+        </form>
+      </div>
     </div>
   )
 }

@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import DatePicker from '../components/DatePicker'
+import Footer from '../components/Footer'
 
 const initialForm = {
   position_applied_for: '',
@@ -9,7 +11,6 @@ const initialForm = {
   gender: '',
   civil_status: '',
   birthdate: '',
-  age: '',
   highest_education_level: '',
   bachelors_degree_course: '',
   year_graduated: '',
@@ -39,15 +40,31 @@ const genderOptions = [
   { value: '', label: 'Select' },
   { value: 'Male', label: 'Male' },
   { value: 'Female', label: 'Female' },
-  { value: 'Other', label: 'Other' }
+  { value: 'Other', label: 'Other / Prefer to self-describe' }
+]
+
+const vacancySourceOptions = [
+  { value: '', label: 'Select' },
+  { value: 'JobStreet', label: '💼 JobStreet' },
+  { value: 'LinkedIn', label: '🔗 LinkedIn' },
+  { value: 'Indeed', label: '🔍 Indeed' },
+  { value: 'Kalibrr', label: '🎯 Kalibrr' },
+  { value: 'Facebook / Social Media', label: '📱 Facebook / Social Media' },
+  { value: 'Company Website', label: '🌐 Company Website' },
+  { value: 'Referral from Employee', label: '🤝 Referral from an Employee' },
+  { value: 'Job Fair', label: '🏢 Job Fair / Recruitment Event' },
+  { value: 'Walk-in', label: '🚶 Walk-in' },
+  { value: 'Other', label: '✏️ Other' },
 ]
 
 const civilStatusOptions = [
   { value: '', label: 'Select' },
   { value: 'Single', label: 'Single' },
   { value: 'Married', label: 'Married' },
-  { value: 'Separated', label: 'Separated' },
-  { value: 'Widowed', label: 'Widowed' }
+  { value: 'Widowed', label: 'Widowed / Widower' },
+  { value: 'Legally Separated', label: 'Legally Separated' },
+  { value: 'Annulled', label: 'Annulled' },
+  { value: 'Divorced', label: 'Divorced (foreign national)' },
 ]
 
 const extractError = async (response) => {
@@ -71,6 +88,8 @@ const extractError = async (response) => {
 
 function ApplyPage() {
   const [form, setForm] = useState(initialForm)
+  const [customGender, setCustomGender] = useState('')
+  const [customVacancySource, setCustomVacancySource] = useState('')
   const [cvFile, setCvFile] = useState(null)
   const [submitting, setSubmitting] = useState(false)
   const [message, setMessage] = useState(null)
@@ -79,6 +98,7 @@ function ApplyPage() {
   const [positionsLoading, setPositionsLoading] = useState(true)
   const [positionsError, setPositionsError] = useState(null)
   const [termsAccepted, setTermsAccepted] = useState(false)
+  const [termsModalOpen, setTermsModalOpen] = useState(false)
 
 
   const handleChange = (event) => {
@@ -95,7 +115,13 @@ function ApplyPage() {
     const formData = new FormData()
 
     Object.entries(form).forEach(([key, value]) => {
-      if (value !== '' && value !== null) {
+      if (key === 'gender') {
+        const genderValue = value === 'Other' ? (customGender.trim() || 'Other') : value
+        if (genderValue) formData.append('gender', genderValue)
+      } else if (key === 'vacancy_source') {
+        const sourceValue = value === 'Other' ? (customVacancySource.trim() || 'Other') : value
+        if (sourceValue) formData.append('vacancy_source', sourceValue)
+      } else if (value !== '' && value !== null) {
         formData.append(key, value)
       }
     })
@@ -106,6 +132,11 @@ function ApplyPage() {
 
     return formData
   }
+
+  useEffect(() => {
+    document.title = 'Careers — Czark Mak Corporation'
+    return () => { document.title = 'CZM — Applicant Tracking System' }
+  }, [])
 
   useEffect(() => {
     let isMounted = true
@@ -168,6 +199,8 @@ function ApplyPage() {
 
       setMessage('Your application has been submitted. We will update you after review through email.')
       setForm(initialForm)
+      setCustomGender('')
+      setCustomVacancySource('')
       setCvFile(null)
     } catch (err) {
       setError('Network error. Please try again in a moment.')
@@ -178,6 +211,7 @@ function ApplyPage() {
 
   return (
     <>
+      <div className="apply-body">
       <section className="apply-hero">
         <div className="apply-hero-glow glow-left" />
         <div className="apply-hero-glow glow-right" />
@@ -312,6 +346,17 @@ function ApplyPage() {
                     </option>
                   ))}
                 </select>
+                {form.gender === 'Other' && (
+                  <input
+                    type="text"
+                    value={customGender}
+                    onChange={e => setCustomGender(e.target.value)}
+                    placeholder="Please specify your gender"
+                    required
+                    maxLength={100}
+                    className="input input-bordered input-lg w-full bg-white mt-2 transition-all duration-200 ease-out hover:-translate-y-0.5 focus:-translate-y-0.5 focus:shadow-lg"
+                  />
+                )}
               </div>
               <div className="form-control">
                 <label className="label">
@@ -335,31 +380,15 @@ function ApplyPage() {
                 <label className="label">
                   <span className="label-text">Birthdate *</span>
                 </label>
-                <input
-                  type="date"
+                <DatePicker
                   name="birthdate"
                   value={form.birthdate}
                   onChange={handleChange}
                   required
-                  className="input input-bordered input-lg w-full bg-white transition-all duration-200 ease-out hover:-translate-y-0.5 focus:-translate-y-0.5 focus:shadow-lg"
+                  placeholder="Select birthdate"
                 />
               </div>
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">Age *</span>
-                </label>
-                <input
-                  type="number"
-                  name="age"
-                  value={form.age}
-                  onChange={handleChange}
-                  min="18"
-                  max="120"
-                  required
-                  placeholder="Enter age"
-                  className="input input-bordered input-lg w-full bg-white transition-all duration-200 ease-out hover:-translate-y-0.5 focus:-translate-y-0.5 focus:shadow-lg"
-                />
-              </div>
+
               </div>
             </div>
 
@@ -465,7 +494,19 @@ function ApplyPage() {
                 <label className="label">
                   <span className="label-text">Expected salary</span>
                 </label>
-                <input className="input input-bordered input-lg w-full bg-white transition-all duration-200 ease-out hover:-translate-y-0.5 focus:-translate-y-0.5 focus:shadow-lg" type="number" min="0" name="expected_salary" value={form.expected_salary} onChange={handleChange} />
+                <div className="peso-input-wrap">
+                  <span className="peso-prefix">₱</span>
+                  <input
+                    className="peso-input input input-bordered input-lg w-full bg-white transition-all duration-200 ease-out hover:-translate-y-0.5 focus:-translate-y-0.5 focus:shadow-lg"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    name="expected_salary"
+                    value={form.expected_salary}
+                    onChange={handleChange}
+                    placeholder="0.00"
+                  />
+                </div>
               </div>
               <div className="form-control">
                 <label className="label">
@@ -495,53 +536,86 @@ function ApplyPage() {
                 <label className="label">
                   <span className="label-text">Where did you learn about this vacancy?</span>
                 </label>
-                <input className="input input-bordered input-lg w-full bg-white transition-all duration-200 ease-out hover:-translate-y-0.5 focus:-translate-y-0.5 focus:shadow-lg" name="vacancy_source" value={form.vacancy_source} onChange={handleChange} />
+                <select
+                  name="vacancy_source"
+                  value={form.vacancy_source}
+                  onChange={handleChange}
+                  className="select select-bordered select-lg w-full bg-white transition-all duration-200 ease-out hover:-translate-y-0.5 focus:-translate-y-0.5 focus:shadow-lg"
+                >
+                  {vacancySourceOptions.map((option) => (
+                    <option key={`source-${option.value || 'empty'}`} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                {form.vacancy_source === 'Other' && (
+                  <input
+                    type="text"
+                    value={customVacancySource}
+                    onChange={e => setCustomVacancySource(e.target.value)}
+                    placeholder="Please tell us where you heard about this vacancy"
+                    maxLength={255}
+                    className="input input-bordered input-lg w-full bg-white mt-2 transition-all duration-200 ease-out hover:-translate-y-0.5 focus:-translate-y-0.5 focus:shadow-lg"
+                  />
+                )}
               </div>
               </div>
             </div>
 
             <div className="form-section" style={{ '--delay': '320ms' }}>
-              <div className="divider apply-divider">Terms</div>
+              <div className="divider apply-divider">Terms &amp; Conditions</div>
               <div className="terms-shell">
-                <div className="terms-card">
-                  <div>
-                    <p className="terms-title">Before you submit</p>
-                    <p className="terms-subtitle">
-                      Please review the terms below. We use your information strictly for recruitment and keep it secure.
-                    </p>
+                <div className="terms-agreement-card">
+                  <div className="terms-agreement-points">
+                    <div className="terms-agreement-point">
+                      <span className="terms-point-icon">📋</span>
+                      <div>
+                        <strong>Accuracy</strong>
+                        <p>All information you provide is accurate and complete.</p>
+                      </div>
+                    </div>
+                    <div className="terms-agreement-point">
+                      <span className="terms-point-icon">📞</span>
+                      <div>
+                        <strong>Contact consent</strong>
+                        <p>We may reach you by email or phone about your application.</p>
+                      </div>
+                    </div>
+                    <div className="terms-agreement-point">
+                      <span className="terms-point-icon">🔒</span>
+                      <div>
+                        <strong>Privacy</strong>
+                        <p>Your data is kept confidential and used only for recruitment.</p>
+                      </div>
+                    </div>
+                    <div className="terms-agreement-point">
+                      <span className="terms-point-icon">📁</span>
+                      <div>
+                        <strong>Retention</strong>
+                        <p>Your application may be kept for up to 2 years for future openings.</p>
+                      </div>
+                    </div>
                   </div>
-                  <label className="terms-check">
+                  <div className="terms-divider" />
+                  <label className="terms-check-row">
                     <input
                       type="checkbox"
                       checked={termsAccepted}
                       onChange={(e) => setTermsAccepted(e.target.checked)}
                       required
-                      className="checkbox checkbox-primary"
+                      className="terms-check-box"
                     />
                     <span>
-                      I agree to the <a href="#terms" onClick={(e) => e.preventDefault()} className="link link-primary">Terms and Conditions</a>
+                      I have read and agree to the{' '}
+                      <button
+                        type="button"
+                        className="terms-link"
+                        onClick={() => setTermsModalOpen(true)}
+                      >
+                        Terms and Conditions
+                      </button>
                     </span>
                   </label>
-                </div>
-                <div id="terms" className="collapse collapse-arrow bg-base-200">
-                  <input type="checkbox" />
-                  <div className="collapse-title text-sm font-semibold">Terms and Conditions</div>
-                  <div className="collapse-content text-sm">
-                    <div className="terms-grid">
-                      <div>
-                        <h4>Accuracy</h4>
-                        <p>You confirm that all information provided is accurate and complete.</p>
-                      </div>
-                      <div>
-                        <h4>Contact</h4>
-                        <p>You allow us to contact you by email or phone about your application.</p>
-                      </div>
-                      <div>
-                        <h4>Privacy</h4>
-                        <p>Your data is kept confidential and used only for recruitment purposes.</p>
-                      </div>
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>
@@ -566,6 +640,89 @@ function ApplyPage() {
           </div>
         </div>
       </form>
+
+      {/* ── Terms Modal ── */}
+      {termsModalOpen && (
+        <div className="terms-modal-backdrop" onClick={() => setTermsModalOpen(false)}>
+          <div className="terms-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="terms-modal-head">
+              <div className="terms-modal-title-wrap">
+                <div className="terms-modal-logo">
+                  <img src="/logoczark.png" alt="" />
+                </div>
+                <div>
+                  <p className="terms-modal-kicker">Czark Mak Corporation</p>
+                  <h2 className="terms-modal-title">Terms &amp; Conditions</h2>
+                </div>
+              </div>
+              <button type="button" className="terms-modal-close" onClick={() => setTermsModalOpen(false)}>✕</button>
+            </div>
+
+            <div className="terms-modal-body">
+              <p className="terms-modal-intro">By submitting an application, you confirm that you have read and agree to the following terms.</p>
+
+              <div className="terms-modal-sections">
+                <div className="terms-modal-section">
+                  <span className="terms-modal-icon">📋</span>
+                  <div>
+                    <strong>Accuracy of Information</strong>
+                    <p>All information you provide is accurate, truthful, and complete. False or misleading information may result in disqualification or termination of employment.</p>
+                  </div>
+                </div>
+                <div className="terms-modal-section">
+                  <span className="terms-modal-icon">📞</span>
+                  <div>
+                    <strong>Consent to Contact</strong>
+                    <p>You consent to being contacted via the email and phone number provided for application updates, interview schedules, and job offer correspondence.</p>
+                  </div>
+                </div>
+                <div className="terms-modal-section">
+                  <span className="terms-modal-icon">🔒</span>
+                  <div>
+                    <strong>Data Privacy &amp; Confidentiality</strong>
+                    <p>Your data is used solely for recruitment, accessible only to authorized HR personnel, stored securely, and never sold or shared with unrelated third parties.</p>
+                  </div>
+                </div>
+                <div className="terms-modal-section">
+                  <span className="terms-modal-icon">📁</span>
+                  <div>
+                    <strong>Document Retention</strong>
+                    <p>Your application and CV may be retained for up to 2 years from submission to consider you for future openings. After this period, data is securely deleted.</p>
+                  </div>
+                </div>
+                <div className="terms-modal-section">
+                  <span className="terms-modal-icon">⚖️</span>
+                  <div>
+                    <strong>Your Rights</strong>
+                    <p>You may request access, correction, or deletion of your data, and may withdraw your application at any time before a final hiring decision.</p>
+                  </div>
+                </div>
+                <div className="terms-modal-section">
+                  <span className="terms-modal-icon">📄</span>
+                  <div>
+                    <strong>Uploaded Documents</strong>
+                    <p>Attached files (CV, certificates) are stored securely and reviewed only by authorized HR staff involved in the hiring process.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="terms-modal-footer">
+              <p>Effective date: March 1, 2026</p>
+              <button
+                type="button"
+                className="terms-modal-accept"
+                onClick={() => { setTermsAccepted(true); setTermsModalOpen(false) }}
+              >
+                I Agree &amp; Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      </div>
+
+      <Footer />
     </>
   )
 }
