@@ -164,7 +164,8 @@ export default function AdminUsersPage() {
         </div>
         {isAdmin && (
           <button type="button" className="um-add-btn" onClick={openCreate}>
-            <span>+</span> Add User
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add User
           </button>
         )}
       </div>
@@ -232,8 +233,12 @@ export default function AdminUsersPage() {
                       {isAdmin && (
                         <td>
                           <div className="um-actions">
-                            <button className="um-act um-act-edit" onClick={() => openEdit(u)} title="Edit">✏️</button>
-                            <button className="um-act um-act-del" disabled={isSelf} title={isSelf?'Cannot delete yourself':'Delete'} onClick={() => setDeleteTarget(u)}>🗑️</button>
+                            <button className="um-act um-act-edit" onClick={() => openEdit(u)} title="Edit user">
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                            </button>
+                            <button className="um-act um-act-del" disabled={isSelf} title={isSelf ? 'Cannot delete yourself' : 'Delete user'} onClick={() => setDeleteTarget(u)}>
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                            </button>
                           </div>
                         </td>
                       )}
@@ -321,12 +326,20 @@ export default function AdminUsersPage() {
           <div className="um-modal" onClick={e => e.stopPropagation()}>
 
             <div className="um-modal-head">
-              <div className="um-modal-head-icon">{editUser ? '✏️' : '➕'}</div>
+              <div className="um-modal-head-icon">
+                {editUser ? (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                ) : (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+                )}
+              </div>
               <div className="um-modal-head-text">
                 <h3>{editUser ? `Edit ${editUser.name}` : 'Add New User'}</h3>
                 <p>{editUser ? 'Update this account\'s details.' : 'Create a new account for your team.'}</p>
               </div>
-              <button className="um-close" onClick={closeModal}>✕</button>
+              <button className="um-close" onClick={closeModal}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
             </div>
 
             <form onSubmit={handleSave}>
@@ -361,7 +374,11 @@ export default function AdminUsersPage() {
                       placeholder={editUser ? '••••••••' : 'Min. 8 characters'}
                     />
                     <button type="button" className="um-pw-eye" onClick={() => setShowPw(p => !p)} tabIndex={-1}>
-                      {showPw ? '🙈' : '👁️'}
+                      {showPw ? (
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                      ) : (
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                      )}
                     </button>
                   </div>
                   {form.password.length > 0 && (
@@ -416,10 +433,14 @@ export default function AdminUsersPage() {
         <div className="um-backdrop" onClick={() => setDeleteTarget(null)}>
           <div className="um-modal um-del-modal" onClick={e => e.stopPropagation()}>
             <div className="um-del-head">
-              <div className="um-del-icon">🗑️</div>
+            <div className="um-del-icon">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+            </div>
               <h3>Delete User?</h3>
               <p>This cannot be undone.</p>
-              <button className="um-close" onClick={() => setDeleteTarget(null)}>✕</button>
+              <button className="um-close" onClick={() => setDeleteTarget(null)}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
             </div>
             <div className="um-modal-body um-del-body">
               <div className="um-del-preview">

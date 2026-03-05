@@ -20,6 +20,13 @@ class PositionController extends Controller
             ->get();
     }
 
+    public function all()
+    {
+        return Position::query()
+            ->orderBy('title')
+            ->get(['id', 'title']);
+    }
+
     public function store(Request $request)
     {
         $data = $this->validatePosition($request);
@@ -52,15 +59,16 @@ class PositionController extends Controller
 
     private function validatePosition(Request $request, bool $isUpdate = false): array
     {
-        $required = $isUpdate ? 'sometimes|required' : 'required';
+        $titleRules    = $isUpdate ? ['sometimes', 'required', 'string', 'max:255'] : ['required', 'string', 'max:255'];
+        $locationRules = $isUpdate ? ['sometimes', 'required', 'string', 'max:255'] : ['required', 'string', 'max:255'];
 
         return $request->validate([
-            'title' => [$required, 'string', 'max:255'],
+            'title'       => $titleRules,
             'description' => ['nullable', 'string', 'max:4000'],
-            'location' => [$required, 'string', 'max:255'],
-            'salary_min' => ['nullable', 'numeric', 'min:0'],
-            'salary_max' => ['nullable', 'numeric', 'min:0'],
-            'is_active' => ['sometimes', 'boolean'],
+            'location'    => $locationRules,
+            'salary_min'  => ['nullable', 'numeric', 'min:0'],
+            'salary_max'  => ['nullable', 'numeric', 'min:0'],
+            'is_active'   => ['sometimes', 'boolean'],
         ]);
     }
 }

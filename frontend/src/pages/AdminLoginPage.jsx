@@ -73,6 +73,7 @@ export default function AdminLoginPage() {
         <div className="login-visual">
           <div className="login-visual-orb orb-a" />
           <div className="login-visual-orb orb-b" />
+          <div className="login-visual-orb orb-c" />
           <div className="login-visual-grid" />
 
           <div className="login-visual-inner">
@@ -138,11 +139,18 @@ export default function AdminLoginPage() {
             </div>
           )}
 
+          <div className="login-form-card">
+
           {/* Heading */}
           <div className="login-form-head">
+            <div className="login-form-avatar">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="rgba(247,243,234,0.9)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </div>
             <h1 className="login-form-title">Welcome back</h1>
             <p className="login-form-sub">Sign in to the admin portal to continue.</p>
           </div>
+
+          <div className="login-form-divider" />
 
           {/* Error banner */}
           {error && (
@@ -234,6 +242,8 @@ export default function AdminLoginPage() {
           <p className="login-form-footer">
             Protected area — authorised personnel only.
           </p>
+
+          </div>{/* end .login-form-card */}
         </form>
       </div>
     </div>

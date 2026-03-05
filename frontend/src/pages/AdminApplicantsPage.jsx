@@ -18,6 +18,18 @@ const statusOptions = [
 const formatStatus = (value) =>
   value.split('_').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
 
+const SHORT_STATUS = {
+  submitted:            'New',
+  under_review:         'Review',
+  shortlisted:          'Shortlist',
+  interview_scheduled:  'Interview',
+  offer_extended:       'Offer',
+  hired:                'Hired',
+  rejected:             'Rejected',
+  withdrawn:            'Withdrawn',
+}
+const shortStatus = (v) => SHORT_STATUS[v] ?? formatStatus(v)
+
 const getInitials = (first, last) =>
   `${first?.slice(0, 1) ?? ''}${last?.slice(0, 1) ?? ''}`.toUpperCase()
 
@@ -42,6 +54,8 @@ function AdminApplicantsPage() {
   const [direction, setDirection]         = useState('desc')
   const [updatingId, setUpdatingId]       = useState(null)
   const [perPage, setPerPage]             = useState(20)
+  const [deleteTarget, setDeleteTarget]   = useState(null)   // { id, name }
+  const [deleting, setDeleting]           = useState(false)
 
   // Advanced filters
   const [showAdvanced, setShowAdvanced]       = useState(false)
@@ -69,12 +83,12 @@ function AdminApplicantsPage() {
 
   const loadPositions = async (activeToken) => {
     try {
-      const response = await fetch(`${apiBase}/api/positions`, {
+      const response = await fetch(`${apiBase}/api/positions/all`, {
         headers: { Authorization: `Bearer ${activeToken}` },
       })
       if (!response.ok) return
       const payload = await response.json()
-      setPositions(payload.data || [])
+      setPositions(Array.isArray(payload) ? payload : (payload.data || []))
     } catch (_) {}
   }
 
@@ -126,18 +140,26 @@ function AdminApplicantsPage() {
     }
   }
 
-  const handleDelete = async (applicantId, e) => {
+  const handleDelete = (applicant, e) => {
     e.stopPropagation()
-    if (!window.confirm('Delete this applicant permanently? This cannot be undone.')) return
+    setDeleteTarget({ id: applicant.id, name: `${applicant.first_name} ${applicant.last_name}` })
+  }
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return
+    setDeleting(true)
     try {
-      const res = await fetch(`${apiBase}/api/applicants/${applicantId}`, {
+      const res = await fetch(`${apiBase}/api/applicants/${deleteTarget.id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       })
       if (!res.ok) throw new Error()
-      setApplicants((prev) => prev.filter((a) => a.id !== applicantId))
+      setApplicants((prev) => prev.filter((a) => a.id !== deleteTarget.id))
+      setDeleteTarget(null)
     } catch {
       setError('Failed to delete applicant.')
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -464,8 +486,8 @@ function AdminApplicantsPage() {
                     Status {sort === 'status' ? (direction === 'asc' ? '▲' : '▼') : <span className="sort-icon">↕</span>}
                   </button>
                 </th>
-                <th>Email</th>
-                <th>Contact</th>
+                <th className="col-email">Email</th>
+                <th className="col-contact">Contact</th>
                 <th>
                   <button type="button" className="admin-th-sort" onClick={() => handleSort('created_at')}>
                     Submitted {sort === 'created_at' ? (direction === 'asc' ? '▲' : '▼') : <span className="sort-icon">↕</span>}
@@ -510,28 +532,33 @@ function AdminApplicantsPage() {
                     </td>
                     <td>{applicant.position_applied_for}</td>
                     <td onClick={(e) => e.stopPropagation()}>
-                      <select
-                        className={`admin-status-select admin-chip ${applicant.status}`}
-                        value={applicant.status}
-                        disabled={!canEdit || updatingId === applicant.id}
-                        onChange={(e) => handleStatusChange(applicant.id, e.target.value, e)}
-                        title={!canEdit ? 'You do not have permission to change status' : undefined}
-                      >
-                        {statusOptions.map((o) => <option key={o} value={o}>{formatStatus(o)}</option>)}
-                      </select>
+                      <div className={`status-chip-wrap status-${applicant.status}`}>
+                        <span className="status-dot" />
+                        <select
+                          className="status-chip-select"
+                          value={applicant.status}
+                          disabled={!canEdit || updatingId === applicant.id}
+                          onChange={(e) => handleStatusChange(applicant.id, e.target.value, e)}
+                          title={!canEdit ? 'No permission to change status' : 'Change status'}
+                        >
+                          {statusOptions.map((o) => <option key={o} value={o}>{shortStatus(o)}</option>)}
+                        </select>
+                        {updatingId === applicant.id && <span className="status-spinner" />}
+                      </div>
                     </td>
-                    <td>{applicant.email_address}</td>
-                    <td>{applicant.contact_number}</td>
+                    <td className="col-email">{applicant.email_address}</td>
+                    <td className="col-contact">{applicant.contact_number}</td>
                     <td>{new Date(applicant.created_at).toLocaleDateString()}</td>
                     {canDelete && (
                       <td onClick={(e) => e.stopPropagation()}>
                         <button
                           type="button"
-                          className="btn btn-xs btn-error btn-outline"
-                          onClick={(e) => handleDelete(applicant.id, e)}
+                          className="tbl-delete-btn"
+                          onClick={(e) => handleDelete(applicant, e)}
                           title="Delete applicant"
+                          aria-label="Delete applicant"
                         >
-                          Delete
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
                         </button>
                       </td>
                     )}
@@ -577,6 +604,42 @@ function AdminApplicantsPage() {
           </div>
         </div>
       </div>
+      {/* ── Delete confirmation modal ── */}
+      {deleteTarget && (
+        <div className="del-modal-backdrop" onClick={() => !deleting && setDeleteTarget(null)}>
+          <div className="del-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="del-modal-icon">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+            </div>
+            <h3 className="del-modal-title">Delete applicant?</h3>
+            <p className="del-modal-body">
+              <strong>{deleteTarget.name}</strong> will be permanently removed from the system. This action cannot be undone.
+            </p>
+            <div className="del-modal-actions">
+              <button
+                type="button"
+                className="del-modal-cancel"
+                onClick={() => setDeleteTarget(null)}
+                disabled={deleting}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="del-modal-confirm"
+                onClick={confirmDelete}
+                disabled={deleting}
+              >
+                {deleting ? (
+                  <><span className="login-spinner" style={{ borderTopColor: '#fff', borderColor: 'rgba(255,255,255,0.3)' }} />Deleting…</>
+                ) : (
+                  <>Delete applicant</>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AdminLayout>
   )
 }

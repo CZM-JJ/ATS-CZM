@@ -12,7 +12,7 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         $data = $request->validate([
-            'email' => ['required', 'email'],
+            'email'    => ['required', 'email'],
             'password' => ['required', 'string'],
         ]);
 
@@ -22,11 +22,18 @@ class AuthController extends Controller
             return response()->json(['message' => 'Invalid credentials'], 401);
         }
 
-        $token = $user->createToken($request->userAgent() ?? 'api')->plainTextToken;
+        // Revoke any existing tokens for this user-agent to avoid token accumulation
+        $user->tokens()->where('name', $request->userAgent() ?? 'api')->delete();
+
+        $token = $user->createToken(
+            $request->userAgent() ?? 'api',
+            ['*'],
+            now()->addHours(8)   // token expires in 8 hours
+        )->plainTextToken;
 
         return response()->json([
             'token' => $token,
-            'user' => $user,
+            'user'  => $user,
         ]);
     }
 

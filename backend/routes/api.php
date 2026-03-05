@@ -9,10 +9,10 @@ use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
-Route::post('login', [AuthController::class, 'login']);
-Route::post('forgot-password', [AuthController::class, 'forgotPassword']);
-Route::post('reset-password', [AuthController::class, 'resetPassword']);
-Route::post('public/applicants', [ApplicantController::class, 'storePublic']);
+Route::post('login', [AuthController::class, 'login'])->middleware('throttle:10,1');
+Route::post('forgot-password', [AuthController::class, 'forgotPassword'])->middleware('throttle:5,1');
+Route::post('reset-password', [AuthController::class, 'resetPassword'])->middleware('throttle:5,1');
+Route::post('public/applicants', [ApplicantController::class, 'storePublic'])->middleware('throttle:20,1');
 Route::get('positions', [PositionController::class, 'publicIndex']);
 
 Route::middleware('auth:sanctum')->group(function (): void {
@@ -43,6 +43,8 @@ Route::middleware('auth:sanctum')->group(function (): void {
         ->middleware('perm:canViewAnalytics');
 
     // Positions - dynamic permission: canManagePositions
+    Route::get('positions/all', [PositionController::class, 'all']);
+    Route::get('positions/admin', [PositionController::class, 'index']);
     Route::post('positions', [PositionController::class, 'store'])
         ->middleware('perm:canManagePositions');
     Route::put('positions/{position}', [PositionController::class, 'update'])

@@ -87,9 +87,9 @@ class ApplicantController extends Controller
             $query->whereDate('created_at', '<=', $endDate);
         }
 
-        $sort = $request->string('sort', 'created_at');
-        $direction = $request->string('direction', 'desc');
-        $allowedSorts = ['created_at', 'last_name', 'first_name', 'status', 'expected_salary', 'total_work_experience_years'];
+        $sort      = $request->input('sort', 'created_at');
+        $direction = $request->input('direction', 'desc');
+        $allowedSorts      = ['created_at', 'last_name', 'first_name', 'status', 'expected_salary', 'total_work_experience_years'];
         $allowedDirections = ['asc', 'desc'];
 
         if (!in_array($sort, $allowedSorts, true)) {

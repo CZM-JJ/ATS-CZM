@@ -20,8 +20,6 @@ const STATUS_META = {
   withdrawn:           { label: 'Withdrawn',            color: '#9ca3af' },
 }
 
-const GENDER_COLORS = ['#4a7fbf', '#c8649a', '#7b5ea7', '#9ca3af']
-
 const PERIOD_OPTIONS = [
   { label: 'All Time', value: 0 },
   { label: '12 Months', value: 365 },
@@ -149,9 +147,15 @@ function AdminAnalyticsPage() {
       <div className="admin-kpi-row">
         <KpiCard icon="👥" label="Total Applicants"
           value={loading ? '—' : fmt(total)}
+          sub={loading ? '' : `${dashboard?.recent_count ?? 0} in last 30 days`}
           bg="rgba(15,61,46,0.1)" color="#0f3d2e" />
-        <KpiCard icon="🗓️" label="Last 30 Days"
-          value={loading ? '—' : fmt(dashboard?.recent_count)}
+        <KpiCard icon="⏳" label="In Pipeline"
+          value={loading ? '—' : fmt(
+            (dashboard?.by_status ?? [])
+              .filter(s => !['hired','rejected','withdrawn'].includes(s.status))
+              .reduce((sum, s) => sum + s.total, 0)
+          )}
+          sub="Active candidates"
           bg="rgba(74,127,191,0.12)" color="#2d5f8a" />
         <KpiCard icon="✅" label="Total Hired"
           value={loading ? '—' : fmt(dashboard?.by_status?.find(s => s.status === 'hired')?.total ?? 0)}
@@ -161,12 +165,6 @@ function AdminAnalyticsPage() {
           value={loading ? '—' : fmt(dashboard?.by_status?.find(s => s.status === 'rejected')?.total ?? 0)}
           sub={loading ? '' : `${dashboard?.rejection_rate ?? 0}% rejection rate`}
           bg="rgba(185,64,64,0.1)" color="#b94040" />
-        <KpiCard icon="💼" label="Avg Experience"
-          value={loading ? '—' : `${dashboard?.avg_experience ?? 0} yrs`}
-          bg="rgba(123,94,167,0.1)" color="#7b5ea7" />
-        <KpiCard icon="💰" label="Avg Expected Salary"
-          value={loading ? '—' : `₱${Number(dashboard?.avg_salary ?? 0).toLocaleString()}`}
-          bg="rgba(200,164,65,0.13)" color="#8a6a16" />
       </div>
 
       {/* Monthly Trend — full width */}
@@ -231,83 +229,24 @@ function AdminAnalyticsPage() {
         </ChartCard>
       </div>
 
-      {/* Row 3: By source + By gender */}
-      <div className="admin-charts-row">
-        <ChartCard title="Application Sources" subtitle="Where applicants heard about the opening."
-          loading={loading} empty={!loading && !(dashboard?.by_source?.length)} emptyText="No source data yet">
-          <ResponsiveContainer width="100%" height={280}>
-            <BarChart layout="vertical"
-              data={(dashboard?.by_source ?? []).map((s) => ({
-                name: s.vacancy_source || 'Unknown',
-                total: s.total,
-              }))}
-              margin={{ top: 0, right: 24, left: 8, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(200,164,65,0.15)" />
-              <XAxis type="number" tick={{ fontSize: 11, fill: '#4b5a51' }} axisLine={false} tickLine={false} />
-              <YAxis type="category" dataKey="name" width={140} tick={{ fontSize: 11, fill: '#0f2c20' }} axisLine={false} tickLine={false} />
-              <Tooltip contentStyle={tooltipStyle} formatter={(v) => [v + ' applicants', 'Source']} />
-              <Bar dataKey="total" radius={[0, 6, 6, 0]} fill="#c8a441" />
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartCard>
-
-        <ChartCard title="Gender Breakdown" subtitle="Distribution of applicants by gender."
-          loading={loading} empty={!loading && !(dashboard?.by_gender?.length)} emptyText="No gender data yet">
-          <ResponsiveContainer width="100%" height={280}>
-            <PieChart>
-              <Pie
-                data={(dashboard?.by_gender ?? []).map((g) => ({ name: g.gender, value: g.total }))}
-                cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={4} dataKey="value">
-                {(dashboard?.by_gender ?? []).map((_, i) => (
-                  <Cell key={i} fill={GENDER_COLORS[i % GENDER_COLORS.length]} stroke="none" />
-                ))}
-              </Pie>
-              <Tooltip contentStyle={tooltipStyle} formatter={(v, n) => [v + ' applicants', n]} />
-              <Legend iconType="circle" iconSize={8}
-                formatter={(v) => <span style={{ fontSize: '0.78rem', color: '#4b5a51' }}>{v}</span>} />
-            </PieChart>
-          </ResponsiveContainer>
-        </ChartCard>
-      </div>
-
-      {/* Row 4: Education + Location */}
-      <div className="admin-charts-row">
-        <ChartCard title="Education Level" subtitle="Highest education level of applicants."
-          loading={loading} empty={!loading && !(dashboard?.by_education?.length)} emptyText="No education data yet">
-          <ResponsiveContainer width="100%" height={260}>
-            <BarChart layout="vertical"
-              data={(dashboard?.by_education ?? []).map((e) => ({
-                name: e.highest_education_level || 'Not specified',
-                total: e.total,
-              }))}
-              margin={{ top: 0, right: 24, left: 8, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(200,164,65,0.15)" />
-              <XAxis type="number" tick={{ fontSize: 11, fill: '#4b5a51' }} axisLine={false} tickLine={false} />
-              <YAxis type="category" dataKey="name" width={155} tick={{ fontSize: 11, fill: '#0f2c20' }} axisLine={false} tickLine={false} />
-              <Tooltip contentStyle={tooltipStyle} formatter={(v) => [v + ' applicants', 'Education']} />
-              <Bar dataKey="total" radius={[0, 6, 6, 0]} fill="#7b5ea7" />
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartCard>
-
-        <ChartCard title="Preferred Locations" subtitle="Top preferred work locations of applicants."
-          loading={loading} empty={!loading && !(dashboard?.by_location?.length)} emptyText="No location data yet">
-          <ResponsiveContainer width="100%" height={260}>
-            <BarChart layout="vertical"
-              data={(dashboard?.by_location ?? []).map((l) => ({
-                name: l.preferred_work_location.length > 28 ? l.preferred_work_location.slice(0, 26) + '…' : l.preferred_work_location,
-                total: l.total,
-              }))}
-              margin={{ top: 0, right: 24, left: 8, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(200,164,65,0.15)" />
-              <XAxis type="number" tick={{ fontSize: 11, fill: '#4b5a51' }} axisLine={false} tickLine={false} />
-              <YAxis type="category" dataKey="name" width={150} tick={{ fontSize: 11, fill: '#0f2c20' }} axisLine={false} tickLine={false} />
-              <Tooltip contentStyle={tooltipStyle} formatter={(v) => [v + ' applicants', 'Location']} />
-              <Bar dataKey="total" radius={[0, 6, 6, 0]} fill="#2e8b7a" />
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartCard>
-      </div>
+      {/* Row 3: Application Sources — full width */}
+      <ChartCard title="Application Sources" subtitle="Where applicants heard about the opening."
+        loading={loading} empty={!loading && !(dashboard?.by_source?.length)} emptyText="No source data yet">
+        <ResponsiveContainer width="100%" height={260}>
+          <BarChart layout="vertical"
+            data={(dashboard?.by_source ?? []).map((s) => ({
+              name: s.vacancy_source || 'Unknown',
+              total: s.total,
+            }))}
+            margin={{ top: 0, right: 32, left: 8, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="rgba(200,164,65,0.15)" />
+            <XAxis type="number" tick={{ fontSize: 11, fill: '#4b5a51' }} axisLine={false} tickLine={false} />
+            <YAxis type="category" dataKey="name" width={160} tick={{ fontSize: 11, fill: '#0f2c20' }} axisLine={false} tickLine={false} />
+            <Tooltip contentStyle={tooltipStyle} formatter={(v) => [v + ' applicants', 'Source']} />
+            <Bar dataKey="total" radius={[0, 6, 6, 0]} fill="#c8a441" maxBarSize={28} />
+          </BarChart>
+        </ResponsiveContainer>
+      </ChartCard>
     </AdminLayout>
   )
 }

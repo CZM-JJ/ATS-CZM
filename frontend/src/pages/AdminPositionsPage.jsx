@@ -41,7 +41,7 @@ function AdminPositionsPage() {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch(`${apiBase}/api/positions?page=${p}&per_page=20`, {
+      const res = await fetch(`${apiBase}/api/positions/admin?page=${p}&per_page=20`, {
         headers: { Authorization: `Bearer ${token}` },
       })
       if (!res.ok) throw new Error()
@@ -204,8 +204,9 @@ function AdminPositionsPage() {
             <h2>All positions</h2>
             <p>{total} position{total !== 1 ? 's' : ''} total</p>
           </div>
-          <button type="button" className="btn apply-submit btn-sm" onClick={openAdd}>
-            + Add position
+          <button type="button" className="pos-add-btn" onClick={openAdd}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add position
           </button>
         </div>
 
@@ -216,10 +217,10 @@ function AdminPositionsPage() {
             <thead>
               <tr>
                 <th>Title</th>
-                <th>Location</th>
-                <th>Salary Range</th>
+                <th className="pos-col-location">Location</th>
+                <th className="pos-col-salary">Salary Range</th>
                 <th>Status</th>
-                <th style={{ width: '140px' }}>Actions</th>
+                <th style={{ width: '110px' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -250,34 +251,39 @@ function AdminPositionsPage() {
                         </div>
                       )}
                     </td>
-                    <td>{pos.location}</td>
-                    <td>{formatSalary(pos.salary_min, pos.salary_max)}</td>
+                    <td className="pos-col-location">{pos.location}</td>
+                    <td className="pos-col-salary">{formatSalary(pos.salary_min, pos.salary_max)}</td>
                     <td>
                       <button
                         type="button"
-                        className={`admin-chip positions-toggle ${pos.is_active ? 'hired' : 'withdrawn'}`}
+                        className={`pos-status-btn ${pos.is_active ? 'pos-active' : 'pos-inactive'}`}
                         disabled={togglingId === pos.id}
                         onClick={() => handleToggleActive(pos)}
                         title={pos.is_active ? 'Click to deactivate' : 'Click to activate'}
                       >
+                        <span className="pos-status-dot" />
                         {togglingId === pos.id ? '…' : pos.is_active ? 'Active' : 'Inactive'}
                       </button>
                     </td>
                     <td>
-                      <div style={{ display: 'flex', gap: '0.4rem' }}>
+                      <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
                         <button
                           type="button"
-                          className="btn btn-xs btn-outline"
+                          className="tbl-edit-btn"
                           onClick={() => openEdit(pos)}
+                          title="Edit position"
+                          aria-label="Edit position"
                         >
-                          Edit
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                         </button>
                         <button
                           type="button"
-                          className="btn btn-xs btn-ghost positions-delete-btn"
+                          className="tbl-delete-btn"
                           onClick={() => setDeleteTarget(pos)}
+                          title="Delete position"
+                          aria-label="Delete position"
                         >
-                          Delete
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
                         </button>
                       </div>
                     </td>
@@ -316,8 +322,16 @@ function AdminPositionsPage() {
         <div className="positions-modal-backdrop" onClick={closeModal}>
           <div className="positions-modal" onClick={(e) => e.stopPropagation()}>
             <div className="positions-modal-head">
-              <h3>{editing ? 'Edit position' : 'Add position'}</h3>
-              <button type="button" className="positions-modal-close" onClick={closeModal}>✕</button>
+              <div className="positions-modal-head-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+              </div>
+              <div>
+                <h3>{editing ? 'Edit position' : 'New position'}</h3>
+                <p>{editing ? 'Update the details for this opening.' : 'Fill in the details for the new job opening.'}</p>
+              </div>
+              <button type="button" className="positions-modal-close" onClick={closeModal}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
             </div>
             <form className="positions-form" onSubmit={handleSave}>
               <div className="positions-form-row">
@@ -393,9 +407,13 @@ function AdminPositionsPage() {
               </label>
               {formError && <div className="admin-alert error">{formError}</div>}
               <div className="positions-modal-footer">
-                <button type="button" className="btn btn-outline btn-sm" onClick={closeModal}>Cancel</button>
-                <button type="submit" className="btn apply-submit btn-sm" disabled={saving}>
-                  {saving ? 'Saving…' : editing ? 'Save changes' : 'Add position'}
+                <button type="button" className="del-modal-cancel" onClick={closeModal}>Cancel</button>
+                <button type="submit" className="pos-modal-save-btn" disabled={saving}>
+                  {saving ? (
+                    <><span className="login-spinner" style={{ borderTopColor: '#fff', borderColor: 'rgba(255,255,255,0.3)' }} />{editing ? 'Saving…' : 'Adding…'}</>
+                  ) : (
+                    editing ? 'Save changes' : 'Add position'
+                  )}
                 </button>
               </div>
             </form>
@@ -405,24 +423,21 @@ function AdminPositionsPage() {
 
       {/* ── Delete Confirm Modal ── */}
       {deleteTarget && (
-        <div className="positions-modal-backdrop" onClick={() => setDeleteTarget(null)}>
-          <div className="positions-modal positions-modal-sm" onClick={(e) => e.stopPropagation()}>
-            <div className="positions-modal-head">
-              <h3>Delete position?</h3>
-              <button type="button" className="positions-modal-close" onClick={() => setDeleteTarget(null)}>✕</button>
+        <div className="del-modal-backdrop" onClick={() => !deleting && setDeleteTarget(null)}>
+          <div className="del-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="del-modal-icon">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
             </div>
-            <p style={{ margin: '0 0 1.5rem', color: '#4b5a51', lineHeight: 1.6 }}>
-              Are you sure you want to delete <strong>{deleteTarget.title}</strong>? This cannot be undone. Existing applicants who applied for this position will not be affected.
+            <h3 className="del-modal-title">Delete position?</h3>
+            <p className="del-modal-body">
+              <strong>{deleteTarget.title}</strong> will be permanently removed. Existing applicants for this position will not be affected.
             </p>
-            <div className="positions-modal-footer">
-              <button type="button" className="btn btn-outline btn-sm" onClick={() => setDeleteTarget(null)}>Cancel</button>
-              <button
-                type="button"
-                className="btn btn-sm positions-delete-confirm-btn"
-                disabled={deleting}
-                onClick={handleDelete}
-              >
-                {deleting ? 'Deleting…' : 'Yes, delete'}
+            <div className="del-modal-actions">
+              <button type="button" className="del-modal-cancel" onClick={() => setDeleteTarget(null)} disabled={deleting}>Cancel</button>
+              <button type="button" className="del-modal-confirm" onClick={handleDelete} disabled={deleting}>
+                {deleting ? (
+                  <><span className="login-spinner" style={{ borderTopColor: '#fff', borderColor: 'rgba(255,255,255,0.3)' }} />Deleting…</>
+                ) : 'Delete position'}
               </button>
             </div>
           </div>
