@@ -259,7 +259,7 @@ export default function DatePicker({ name, value, onChange, required, placeholde
       <button
         ref={triggerRef}
         type="button"
-        className={`dp-trigger${open ? ' dp-trigger--open' : ''}${!value ? ' dp-trigger--empty' : ''}`}
+        className={`input input-bordered input-lg dp-trigger${open ? ' dp-trigger--open' : ''}${!value ? ' dp-trigger--empty' : ''}`}
         onClick={() => setOpen(o => !o)}
         aria-haspopup="true"
         aria-expanded={open}

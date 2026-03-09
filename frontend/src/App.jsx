@@ -11,6 +11,7 @@ import AdminForgotPasswordPage from './pages/AdminForgotPasswordPage'
 import AdminResetPasswordPage from './pages/AdminResetPasswordPage'
 import AdminPositionsPage from './pages/AdminPositionsPage'
 import AdminUsersPage from './pages/AdminUsersPage'
+import AdminAuditLogsPage from './pages/AdminAuditLogsPage'
 
 function App() {
   return (
@@ -75,6 +76,7 @@ function AppContent() {
         <Route path="/admin/applicants" element={<ProtectedRoute><AdminApplicantsPage /></ProtectedRoute>} />
         <Route path="/admin/positions" element={<ProtectedRoute permission="canManagePositions"><AdminPositionsPage /></ProtectedRoute>} />
         <Route path="/admin/users" element={<ProtectedRoute permission="canManageUsers"><AdminUsersPage /></ProtectedRoute>} />
+        <Route path="/admin/audit-logs" element={<ProtectedRoute roles={['admin']}><AdminAuditLogsPage /></ProtectedRoute>} />
         <Route path="/admin/forgot-password" element={<AdminForgotPasswordPage />} />
         <Route path="/admin/reset-password" element={<AdminResetPasswordPage />} />
         <Route path="*" element={<Navigate to="/apply" replace />} />

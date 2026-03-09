@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AuditLog;
 use App\Models\Applicant;
 use App\Models\User;
 use App\Notifications\ApplicantStatusUpdated;
@@ -107,6 +108,10 @@ class ApplicantController extends Controller
     {
         $applicant = $this->createApplicant($request, false);
 
+        AuditLog::log('create', 'applicant', $applicant->id,
+            $applicant->last_name . ', ' . $applicant->first_name,
+            "Created applicant '{$applicant->last_name}, {$applicant->first_name}'");
+
         return response()->json($applicant, 201);
     }
 
@@ -139,9 +144,19 @@ class ApplicantController extends Controller
 
         $applicant->update($data);
 
-        if ($previousStatus !== $applicant->status && $applicant->email_address) {
-            Notification::route('mail', $applicant->email_address)
-                ->notify(new ApplicantStatusUpdated($applicant));
+        $fullName = $applicant->last_name . ', ' . $applicant->first_name;
+
+        if ($previousStatus !== $applicant->status) {
+            AuditLog::log('status_change', 'applicant', $applicant->id, $fullName,
+                "Status changed: {$previousStatus} → {$applicant->status} for '{$fullName}'");
+
+            if ($applicant->email_address) {
+                Notification::route('mail', $applicant->email_address)
+                    ->notify(new ApplicantStatusUpdated($applicant));
+            }
+        } else {
+            AuditLog::log('update', 'applicant', $applicant->id, $fullName,
+                "Updated applicant '{$fullName}'");
         }
 
         return $applicant;
@@ -149,11 +164,17 @@ class ApplicantController extends Controller
 
     public function destroy(Applicant $applicant)
     {
+        $fullName = $applicant->last_name . ', ' . $applicant->first_name;
+        $applicantId = $applicant->id;
+
         if ($applicant->cv_path) {
             Storage::disk('public')->delete($applicant->cv_path);
         }
 
         $applicant->delete();
+
+        AuditLog::log('delete', 'applicant', $applicantId, $fullName,
+            "Deleted applicant '{$fullName}'");
 
         return response()->noContent();
     }

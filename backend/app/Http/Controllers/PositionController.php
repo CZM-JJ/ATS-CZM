@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AuditLog;
 use App\Models\Position;
 use Illuminate\Http\Request;
 
@@ -33,6 +34,9 @@ class PositionController extends Controller
 
         $position = Position::create($data);
 
+        AuditLog::log('create', 'position', $position->id, $position->title,
+            "Created position '{$position->title}'");
+
         return response()->json($position, 201);
     }
 
@@ -47,12 +51,21 @@ class PositionController extends Controller
 
         $position->update($data);
 
+        AuditLog::log('update', 'position', $position->id, $position->title,
+            "Updated position '{$position->title}'");
+
         return $position;
     }
 
     public function destroy(Position $position)
     {
+        $title = $position->title;
+        $positionId = $position->id;
+
         $position->delete();
+
+        AuditLog::log('delete', 'position', $positionId, $title,
+            "Deleted position '{$title}'");
 
         return response()->noContent();
     }

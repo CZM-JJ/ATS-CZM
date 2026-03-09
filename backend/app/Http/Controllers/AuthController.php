@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AuditLog;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
-use App\Models\User;
 
 class AuthController extends Controller
 {
@@ -31,6 +32,10 @@ class AuthController extends Controller
             now()->addHours(8)   // token expires in 8 hours
         )->plainTextToken;
 
+        AuditLog::log('login', 'session', null, $user->email,
+            "User '{$user->name}' logged in",
+            $user->id, $user->name);
+
         return response()->json([
             'token' => $token,
             'user'  => $user,
@@ -39,7 +44,13 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
-        $request->user()->currentAccessToken()?->delete();
+        $user = $request->user();
+
+        AuditLog::log('logout', 'session', null, $user->email,
+            "User '{$user->name}' logged out",
+            $user->id, $user->name);
+
+        $user->currentAccessToken()?->delete();
 
         return response()->noContent();
     }

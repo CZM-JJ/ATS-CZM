@@ -41,6 +41,11 @@ export default function AdminLayout({ children, pageTitle }) {
                 Users
               </NavLink>
             )}
+            {isAdmin && (
+              <NavLink to="/admin/audit-logs" className={({ isActive }) => (isActive ? 'active' : '')}>
+                Audit Logs
+              </NavLink>
+            )}
           </nav>
           <div className="admin-profile">
             <div className="admin-avatar" aria-hidden="true">

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ApplicantController;
 use App\Http\Controllers\ApplicantNoteController;
+use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PositionController;
@@ -69,5 +70,9 @@ Route::middleware('auth:sanctum')->group(function (): void {
     // Settings / Permissions
     Route::get('settings/permissions', [SettingsController::class, 'getPermissions']);
     Route::put('settings/permissions', [SettingsController::class, 'updatePermissions'])
+        ->middleware('role:admin');
+
+    // Audit Logs - admin only
+    Route::get('audit-logs', [AuditLogController::class, 'index'])
         ->middleware('role:admin');
 });

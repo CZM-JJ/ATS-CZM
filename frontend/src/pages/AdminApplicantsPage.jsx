@@ -30,6 +30,8 @@ const SHORT_STATUS = {
 }
 const shortStatus = (v) => SHORT_STATUS[v] ?? formatStatus(v)
 
+const toName = (str) => str ? str.trim().toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase()) : ''
+
 const getInitials = (first, last) =>
   `${first?.slice(0, 1) ?? ''}${last?.slice(0, 1) ?? ''}`.toUpperCase()
 
@@ -142,7 +144,7 @@ function AdminApplicantsPage() {
 
   const handleDelete = (applicant, e) => {
     e.stopPropagation()
-    setDeleteTarget({ id: applicant.id, name: `${applicant.first_name} ${applicant.last_name}` })
+    setDeleteTarget({ id: applicant.id, name: `${toName(applicant.first_name)} ${toName(applicant.last_name)}` })
   }
 
   const confirmDelete = async () => {
@@ -167,7 +169,7 @@ function AdminApplicantsPage() {
     const win = window.open('', '_blank')
     const rows = applicants.map((a) => `
       <tr>
-        <td>${a.first_name} ${a.last_name}</td>
+        <td>${toName(a.first_name)} ${toName(a.last_name)}</td>
         <td>${a.email_address}</td>
         <td>${a.contact_number ?? ''}</td>
         <td>${a.position_applied_for ?? ''}</td>
@@ -526,7 +528,7 @@ function AdminApplicantsPage() {
                     </td>
                     <td>
                       <div className="admin-table-name">
-                        <strong>{applicant.first_name} {applicant.last_name}</strong>
+                        <strong>{toName(applicant.first_name)} {toName(applicant.last_name)}</strong>
                         <span className="admin-table-email">{applicant.email_address}</span>
                       </div>
                     </td>

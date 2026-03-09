@@ -218,6 +218,7 @@ function AdminPage() {
   }
 
   const formatStatus = (value) => value.split('_').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+  const toName = (str) => str ? str.trim().toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase()) : ''
 
   const handleDeleteApplicant = async (applicantId) => {
     if (!window.confirm('Delete this applicant permanently? This cannot be undone.')) return
@@ -344,7 +345,7 @@ function AdminPage() {
                       {item.first_name?.slice(0, 1)}{item.last_name?.slice(0, 1)}
                     </div>
                     <div className="admin-list-info">
-                      <strong>{item.first_name} {item.last_name}</strong>
+                      <strong>{toName(item.first_name)} {toName(item.last_name)}</strong>
                       <span className="admin-list-position">{item.position_applied_for}</span>
                       <span className={`admin-chip ${item.status}`}>{formatStatus(item.status)}</span>
                     </div>
@@ -381,7 +382,7 @@ function AdminPage() {
                       {selectedApplicant.first_name?.slice(0, 1)}{selectedApplicant.last_name?.slice(0, 1)}
                     </div>
                     <div>
-                      <h3>{selectedApplicant.first_name} {selectedApplicant.last_name}</h3>
+                      <h3>{toName(selectedApplicant.first_name)} {toName(selectedApplicant.last_name)}</h3>
                       <p>{selectedApplicant.position_applied_for}</p>
                       <span className={`admin-chip ${selectedApplicant.status}`}>
                         {formatStatus(selectedApplicant.status)}

@@ -622,8 +622,17 @@ function ApplyPage() {
 
             <div className="form-section" style={{ '--delay': '400ms' }}>
               <div className="flex flex-col items-center gap-4">
-              <button type="submit" disabled={submitting} className={`btn btn-lg btn-wide apply-submit ${submitting ? 'loading' : ''}`}>
-                {submitting ? 'Submitting...' : 'Submit application'}
+              <button type="submit" disabled={submitting} className={`btn btn-lg btn-wide apply-submit${submitting ? ' apply-submit--loading' : ''}`}>
+                {submitting ? (
+                  <span className="apply-submit-loading-content">
+                    <svg className="apply-submit-spinner" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="42 14" />
+                    </svg>
+                    Submitting your application…
+                  </span>
+                ) : (
+                  'Submit Application'
+                )}
               </button>
               {message ? (
                 <div className="alert alert-success" role="alert">

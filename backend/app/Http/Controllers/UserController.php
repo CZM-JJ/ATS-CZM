@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AuditLog;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -32,6 +33,9 @@ class UserController extends Controller
             'role'     => $data['role'],
         ]);
 
+        AuditLog::log('create', 'user', $user->id, $user->email,
+            "Created user '{$user->name}' with role '{$user->role}'");
+
         return response()->json(
             $user->only('id', 'name', 'email', 'role', 'created_at'),
             201
@@ -55,6 +59,9 @@ class UserController extends Controller
 
         $user->update($data);
 
+        AuditLog::log('update', 'user', $user->id, $user->email,
+            "Updated user '{$user->name}'");
+
         return $user->only('id', 'name', 'email', 'role', 'created_at');
     }
 
@@ -64,8 +71,15 @@ class UserController extends Controller
             return response()->json(['message' => 'You cannot delete your own account.'], 422);
         }
 
+        $name = $user->name;
+        $email = $user->email;
+        $userId = $user->id;
+
         $user->tokens()->delete();
         $user->delete();
+
+        AuditLog::log('delete', 'user', $userId, $email,
+            "Deleted user '{$name}'");
 
         return response()->noContent();
     }
