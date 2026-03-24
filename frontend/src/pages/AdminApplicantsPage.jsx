@@ -4,8 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth, useRole } from '../context/AuthContext'
 import AdminLayout from '../components/AdminLayout'
 import ApplicantTimeline from '../components/ApplicantTimeline'
-
-const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+import { apiBase } from '../utils/apiBase'
 const statusOptions = [
   'new',
   'reviewed',
@@ -1140,7 +1139,7 @@ function AdminApplicantsPage() {
         )
       })(), document.body)}
       {/* ── Bulk action bar ── */}
-      {canDelete && selectedIds.length > 0 && (
+      {canDelete && selectedIds.length > 0 && createPortal(
         <div className="bulk-action-bar">
           <span className="bulk-action-count">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -1166,7 +1165,8 @@ function AdminApplicantsPage() {
               </>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
       {viewTargetId && createPortal((
         <div className="avm-backdrop" onMouseDown={closeViewModal}>

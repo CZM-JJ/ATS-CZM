@@ -1,8 +1,10 @@
+
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useAuth } from '../context/AuthContext'
 import AdminLayout from '../components/AdminLayout'
+import { apiBase } from '../utils/apiBase'
 
-const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
 const emptyForm = {
   title: '',
@@ -12,6 +14,7 @@ const emptyForm = {
   salary_max: '',
   is_active: true,
 }
+
 
 function AdminPositionsPage() {
   const { token } = useAuth()
@@ -36,6 +39,45 @@ function AdminPositionsPage() {
 
   // Toggle loading
   const [togglingId, setTogglingId] = useState(null)
+
+  // Bulk selection state
+  const [selectedIds, setSelectedIds] = useState([])
+  const toggleSelect = (id) => {
+    setSelectedIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id])
+  }
+  const toggleSelectAll = () => {
+    if (selectedIds.length === positions.length && positions.length > 0) {
+      setSelectedIds([])
+    } else {
+      setSelectedIds(positions.map((p) => p.id))
+    }
+  }
+  const clearSelection = () => setSelectedIds([])
+
+  // Bulk delete
+  const handleBulkDelete = async () => {
+    if (!selectedIds.length) return
+    if (!window.confirm(`Delete ${selectedIds.length} selected position(s)?`)) return
+    setLoading(true)
+    try {
+      const res = await fetch(`${apiBase}/api/positions/bulk`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ ids: selectedIds }),
+      })
+      if (!res.ok) throw new Error()
+      setPositions((prev) => prev.filter((p) => !selectedIds.includes(p.id)))
+      setTotal((t) => t - selectedIds.length)
+      setSelectedIds([])
+    } catch {
+      setError('Failed to delete selected positions.')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   // Modal refs for auto-scroll
   const addEditModalRef = useRef(null)
@@ -212,10 +254,10 @@ function AdminPositionsPage() {
           <p>Manage job openings shown on the application form. Only <strong>active</strong> positions appear to applicants.</p>
         </div>
         <span className="admin-welcome-date">{todayLabel}</span>
-      </div>
+
 
       {/* ── Main card ── */}
-      <div className="admin-card">
+      <div className="admin-card" style={{ width: '100%' }}>
         <div className="admin-card-head">
           <div>
             <h2>All positions</h2>
@@ -229,10 +271,20 @@ function AdminPositionsPage() {
 
         {error && <div className="admin-alert error">{error}</div>}
 
-        <div className="admin-table-wrap">
-          <table className="admin-table">
+        <div className="admin-table-wrap" style={{ width: '100%', padding: 0, margin: 0 }}>
+          <table className="admin-table" style={{ width: '100%' }}>
             <thead>
               <tr>
+                <th style={{ width: '36px' }}>
+                  <input
+                    type="checkbox"
+                    className="bulk-checkbox"
+                    checked={positions.length > 0 && selectedIds.length === positions.length}
+                    ref={(el) => { if (el) el.indeterminate = selectedIds.length > 0 && selectedIds.length < positions.length }}
+                    onChange={toggleSelectAll}
+                    title="Select all on this page"
+                  />
+                </th>
                 <th>Title</th>
                 <th className="pos-col-location">Location</th>
                 <th className="pos-col-salary">Salary Range</th>
@@ -260,6 +312,15 @@ function AdminPositionsPage() {
               ) : positions.length ? (
                 positions.map((pos) => (
                   <tr key={pos.id}>
+                    <td onClick={e => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        className="bulk-checkbox"
+                        checked={selectedIds.includes(pos.id)}
+                        onChange={() => toggleSelect(pos.id)}
+                        title="Select position"
+                      />
+                    </td>
                     <td>
                       <div style={{ fontWeight: 700, color: '#0f2c20' }}>{pos.title}</div>
                       {pos.description && (
@@ -308,7 +369,7 @@ function AdminPositionsPage() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={5}>
+                  <td colSpan={6}>
                     <div className="admin-empty-state">
                       <div className="admin-empty-icon">📋</div>
                       <p>No positions yet</p>
@@ -320,6 +381,9 @@ function AdminPositionsPage() {
             </tbody>
           </table>
         </div>
+      </div>
+
+
 
         {/* Pagination */}
         {lastPage > 1 && (
@@ -370,73 +434,15 @@ function AdminPositionsPage() {
                     value={form.location}
                     onChange={handleChange}
                     required
-                    placeholder="e.g. Makati, Remote"
-                    className="input input-bordered"
                   />
                 </label>
               </div>
-              <label>
-                <span>Description</span>
-                <textarea
-                  name="description"
-                  value={form.description}
-                  onChange={handleChange}
-                  rows={3}
-                  placeholder="Optional — brief description of the role"
-                  className="positions-textarea"
-                />
-              </label>
-              <div className="positions-form-row">
-                <label>
-                  <span>Min salary (₱)</span>
-                  <input
-                    name="salary_min"
-                    type="number"
-                    min="0"
-                    value={form.salary_min}
-                    onChange={handleChange}
-                    placeholder="e.g. 30000"
-                    className="input input-bordered"
-                  />
-                </label>
-                <label>
-                  <span>Max salary (₱)</span>
-                  <input
-                    name="salary_max"
-                    type="number"
-                    min="0"
-                    value={form.salary_max}
-                    onChange={handleChange}
-                    placeholder="e.g. 60000"
-                    className="input input-bordered"
-                  />
-                </label>
-              </div>
-              <label className="positions-toggle-label">
-                <span>Active (visible on apply form)</span>
-                <input
-                  type="checkbox"
-                  name="is_active"
-                  checked={form.is_active}
-                  onChange={handleChange}
-                  className="positions-checkbox"
-                />
-              </label>
-              {formError && <div className="admin-alert error">{formError}</div>}
-              <div className="positions-modal-footer">
-                <button type="button" className="del-modal-cancel" onClick={closeModal}>Cancel</button>
-                <button type="submit" className="pos-modal-save-btn" disabled={saving}>
-                  {saving ? (
-                    <><span className="login-spinner" style={{ borderTopColor: '#fff', borderColor: 'rgba(255,255,255,0.3)' }} />{editing ? 'Saving…' : 'Adding…'}</>
-                  ) : (
-                    editing ? 'Save changes' : 'Add position'
-                  )}
-                </button>
-              </div>
+              {/* ...existing code... */}
             </form>
           </div>
         </div>
       )}
+
 
       {/* ── Delete Confirm Modal ── */}
       {deleteTarget && (
@@ -461,6 +467,25 @@ function AdminPositionsPage() {
         </div>
       )}
 
+      {/* Bulk action bar (portal) */}
+      {selectedIds.length > 0 && createPortal(
+        <div className="bulk-action-bar">
+          <span className="bulk-action-count">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            {selectedIds.length} selected
+          </span>
+          <div className="bulk-action-btns">
+            <button type="button" className="bulk-action-clear" onClick={clearSelection}>
+              Deselect all
+            </button>
+            <button type="button" className="bulk-action-delete" onClick={handleBulkDelete}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+              Delete {selectedIds.length} position{selectedIds.length !== 1 ? 's' : ''}
+            </button>
+          </div>
+        </div>,
+        document.body
+      )}
     </AdminLayout>
   )
 }

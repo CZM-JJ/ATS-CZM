@@ -1,13 +1,12 @@
 import { createContext, useContext, useEffect, useState } from 'react'
-
-const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+import { apiBase } from '../utils/apiBase'
 
 const AuthContext = createContext(null)
 
 const PERMISSION_DEFAULTS = {
   canEdit:            ['admin', 'hr_manager', 'hr_supervisor'],
-  canDelete:          ['admin'],
-  canManagePositions: ['admin'],
+  canDelete:          ['admin', 'hr_manager', 'hr_supervisor'],
+  canManagePositions: ['admin', 'hr_manager', 'hr_supervisor'],
   canViewAnalytics:   ['admin', 'hr_manager', 'hr_supervisor'],
   canManageUsers:     ['admin'],
 }

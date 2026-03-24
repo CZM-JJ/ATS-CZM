@@ -1,27 +1,49 @@
 import { useEffect, useState } from 'react'
+import { apiBase } from '../utils/apiBase'
 
-const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
-
-const getStatusColors = (description) => {
-  const desc = description?.toLowerCase() || ''
-  if (desc.includes('reviewed')) return { marker: '#3b82f6', label: '#1e40af', bg: '#eff6ff', badge: '#dbeafe' }
-  if (desc.includes('shortlist')) return { marker: '#10b981', label: '#065f46', bg: '#f0fdf4', badge: '#dcfce7' }
-  if (desc.includes('interview')) return { marker: '#f59e0b', label: '#92400e', bg: '#fffbeb', badge: '#fef3c7' }
-  if (desc.includes('offer')) return { marker: '#c8a441', label: '#78350f', bg: '#fffef0', badge: '#fef08a' }
-  if (desc.includes('hired')) return { marker: '#22c55e', label: '#166534', bg: '#f0fdf4', badge: '#86efac' }
-  if (desc.includes('rejected')) return { marker: '#ef4444', label: '#7f1d1d', bg: '#fef2f2', badge: '#fecaca' }
-  return { marker: '#9ca3af', label: '#374151', bg: '#f9fafb', badge: '#e5e7eb' }
+const STATUS_META = {
+  reviewed:            { marker: '#3b82f6', label: '#1e40af', bg: '#eff6ff', badge: '#dbeafe', text: 'Application Reviewed' },
+  shortlisted:         { marker: '#10b981', label: '#065f46', bg: '#f0fdf4', badge: '#dcfce7', text: 'Shortlisted' },
+  interview_scheduled: { marker: '#f59e0b', label: '#92400e', bg: '#fffbeb', badge: '#fef3c7', text: 'Interview Scheduled' },
+  offer_extended:      { marker: '#c8a441', label: '#78350f', bg: '#fffef0', badge: '#fef08a', text: 'Offer Extended' },
+  hired:               { marker: '#22c55e', label: '#166534', bg: '#f0fdf4', badge: '#86efac', text: 'Applicant Hired' },
+  rejected:            { marker: '#ef4444', label: '#7f1d1d', bg: '#fef2f2', badge: '#fecaca', text: 'Application Rejected' },
+  withdrawn:           { marker: '#6b7280', label: '#374151', bg: '#f9fafb', badge: '#e5e7eb', text: 'Application Withdrawn' },
+  default:             { marker: '#9ca3af', label: '#374151', bg: '#f9fafb', badge: '#e5e7eb', text: 'Status Update' },
 }
 
-const getStatusLabel = (description) => {
-  const desc = description?.toLowerCase() || ''
-  if (desc.includes('reviewed')) return 'Application Reviewed'
-  if (desc.includes('shortlist')) return 'Shortlisted'
-  if (desc.includes('interview')) return 'Interview Scheduled'
-  if (desc.includes('offer')) return 'Offer Extended'
-  if (desc.includes('hired')) return 'Applicant Hired'
-  if (desc.includes('rejected')) return 'Application Rejected'
-  return 'Status Update'
+const normalizeStatusToken = (value) => {
+  const token = (value || '')
+    .toLowerCase()
+    .replace(/[’']/g, '')
+    .replace(/[^a-z\s_]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+
+  if (!token) return null
+  if (token.includes('interview')) return 'interview_scheduled'
+  if (token.includes('shortlist')) return 'shortlisted'
+  if (token.includes('offer')) return 'offer_extended'
+  if (token.includes('hired')) return 'hired'
+  if (token.includes('reject')) return 'rejected'
+  if (token.includes('withdraw')) return 'withdrawn'
+  if (token.includes('review')) return 'reviewed'
+  return token.replace(/\s+/g, '_')
+}
+
+const getStatusKeyFromDescription = (description) => {
+  const desc = description || ''
+  const transitionMatch = desc.match(/status\s*changed\s*:\s*.*?(?:->|→)\s*(.*?)\s*(?:for\b|$)/i)
+  if (transitionMatch?.[1]) {
+    return normalizeStatusToken(transitionMatch[1])
+  }
+
+  return normalizeStatusToken(desc)
+}
+
+const getStatusMeta = (description) => {
+  const key = getStatusKeyFromDescription(description)
+  return STATUS_META[key] || STATUS_META.default
 }
 
 const formatDescription = (description) => {
@@ -101,36 +123,35 @@ function ApplicantTimeline({ applicantId, token }) {
         <div className="avm-timeline-v2">
           {events.map((event, index) => {
             const isLast = index === events.length - 1
-            const colors = getStatusColors(event.description)
-            const label = getStatusLabel(event.description)
+            const statusMeta = getStatusMeta(event.description)
             const displayDesc = formatDescription(event.description)
 
             return (
               <div key={event.id} className="avm-timeline-item-v2">
                 <div className="avm-timeline-left-v2">
-                  <div className="avm-timeline-marker-v2" style={{ backgroundColor: colors.marker }}>
+                  <div className="avm-timeline-marker-v2" style={{ backgroundColor: statusMeta.marker }}>
                   </div>
-                  {!isLast && <div className="avm-timeline-line-v2" style={{ backgroundColor: colors.marker }} />}
+                  {!isLast && <div className="avm-timeline-line-v2" style={{ backgroundColor: statusMeta.marker }} />}
                 </div>
 
                 <div className="avm-timeline-right-v2">
-                  <div className="avm-timeline-box-v2" style={{ backgroundColor: colors.bg, borderLeftColor: colors.marker }}>
-                    <div className="avm-timeline-badge-v2" style={{ backgroundColor: colors.badge, color: colors.label }}>
-                      {label}
+                  <div className="avm-timeline-box-v2" style={{ backgroundColor: statusMeta.bg, borderLeftColor: statusMeta.marker }}>
+                    <div className="avm-timeline-badge-v2" style={{ backgroundColor: statusMeta.badge, color: statusMeta.label }}>
+                      {statusMeta.text}
                     </div>
 
-                    <p className="avm-timeline-desc-v2" style={{ color: colors.label }}>
+                    <p className="avm-timeline-desc-v2" style={{ color: statusMeta.label }}>
                       {displayDesc}
                     </p>
 
                     <div className="avm-timeline-meta-v2">
                       <div className="avm-timeline-meta-item-v2">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                        <span style={{ color: colors.label, fontWeight: 600 }}>{event.recruiter_name}</span>
+                        <span style={{ color: statusMeta.label, fontWeight: 600 }}>{event.recruiter_name}</span>
                       </div>
                       <div className="avm-timeline-meta-item-v2">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                        <span style={{ color: colors.label }}>{event.created_at_formatted}</span>
+                        <span style={{ color: statusMeta.label }}>{event.created_at_formatted}</span>
                       </div>
                     </div>
                   </div>

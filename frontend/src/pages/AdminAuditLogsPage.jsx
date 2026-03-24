@@ -1,8 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useAuth } from '../context/AuthContext'
 import AdminLayout from '../components/AdminLayout'
-
-const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+import { apiBase } from '../utils/apiBase'
 
 const ACTION_META = {
   login:         { label: 'Login',         cls: 'audit-badge-login',   icon: '🔑' },

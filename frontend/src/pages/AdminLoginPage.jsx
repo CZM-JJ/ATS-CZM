@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, Navigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { apiBase } from '../utils/apiBase'
 
 // ─── To add your own image or GIF: ───────────────────────────────────────────
 //  Option A (recommended): Drop the file in frontend/public/ and reference it
@@ -12,8 +13,6 @@ import { useAuth } from '../context/AuthContext'
 // ─────────────────────────────────────────────────────────────────────────────
 const HERO_IMAGE = null          // e.g. '/banner.gif' or imported asset
 const SHOW_VISUAL_PANEL = true   // set false to hide the left panel
-
-const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
 const FEATURES = [
   { icon: '📋', label: 'Applicant Tracking',  desc: 'Monitor every candidate through the full hiring pipeline.' },

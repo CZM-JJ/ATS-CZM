@@ -2,8 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useAuth, useRole, PERMISSION_DEFAULTS } from '../context/AuthContext'
 import AdminLayout from '../components/AdminLayout'
-
-const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+import { apiBase } from '../utils/apiBase'
 
 const ROLE_OPTIONS = [
   {

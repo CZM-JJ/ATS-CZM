@@ -2,8 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { NavLink, useSearchParams } from 'react-router-dom'
 import { useAuth, useRole } from '../context/AuthContext'
 import AdminLayout from '../components/AdminLayout'
-
-const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+import { apiBase } from '../utils/apiBase'
 const statusOptions = [
   'new',
   'reviewed',

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import DatePicker from '../components/DatePicker'
 import Footer from '../components/Footer'
+import { apiBase } from '../utils/apiBase'
 
 const initialForm = {
   position_applied_for: '',
@@ -23,8 +24,6 @@ const initialForm = {
   preferred_work_location: '',
   vacancy_source: '',
 }
-
-const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
 const educationOptions = [
   { value: '', label: 'Select' },

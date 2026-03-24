@@ -1,13 +1,12 @@
 ﻿import { useEffect, useState, useCallback } from 'react'
 import { useAuth } from '../context/AuthContext'
 import AdminLayout from '../components/AdminLayout'
+import { apiBase } from '../utils/apiBase'
 import {
   PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
   AreaChart, Area,
 } from 'recharts'
-
-const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 
 const STATUS_META = {
   new:                 { label: 'New',                  color: '#3b82f6' },
@@ -21,10 +20,11 @@ const STATUS_META = {
 }
 
 const PERIOD_OPTIONS = [
-  { label: 'All Time', value: 0 },
+  { label: '7 Days', value: 7 },
+  { label: '30 Days', value: 30 },
+  { label: '90 Days', value: 90 },
   { label: '12 Months', value: 365 },
-  { label: '90 Days',   value: 90 },
-  { label: '30 Days',   value: 30 },
+  { label: 'All Time', value: 0 },
 ]
 
 const tooltipStyle = {

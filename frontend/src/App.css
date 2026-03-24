@@ -2400,8 +2400,8 @@ textarea {
 /* ── Bulk action bar ── */
 .bulk-action-bar {
   position: fixed;
-  bottom: 2rem;
   left: 50%;
+  bottom: 2.5rem;
   transform: translateX(-50%);
   z-index: 1500;
   display: flex;
