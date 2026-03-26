@@ -12,34 +12,45 @@ class AuthController extends Controller
 {
     public function login(Request $request)
     {
-        $data = $request->validate([
-            'email'    => ['required', 'email'],
-            'password' => ['required', 'string'],
-        ]);
+        try {
+            $data = $request->validate([
+                'email'    => ['required', 'email'],
+                'password' => ['required', 'string'],
+            ]);
 
-        $user = User::where('email', $data['email'])->first();
+            $user = User::where('email', $data['email'])->first();
 
-        if (!$user || !Hash::check($data['password'], $user->password)) {
-            return response()->json(['message' => 'Invalid credentials'], 401);
+            if (!$user || !Hash::check($data['password'], $user->password)) {
+                return response()->json(['message' => 'Invalid credentials'], 401);
+            }
+
+            // Revoke any existing tokens for this user-agent to avoid token accumulation
+            $user->tokens()->where('name', $request->userAgent() ?? 'api')->delete();
+
+            $token = $user->createToken(
+                $request->userAgent() ?? 'api',
+                ['*'],
+                now()->addHours(8)   // token expires in 8 hours
+            )->plainTextToken;
+
+            AuditLog::log('login', 'session', null, $user->email,
+                "User '{$user->name}' logged in",
+                $user->id, $user->name);
+
+            return response()->json([
+                'token' => $token,
+                'user'  => $user,
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'An unexpected error occurred.',
+            ], 500);
         }
-
-        // Revoke any existing tokens for this user-agent to avoid token accumulation
-        $user->tokens()->where('name', $request->userAgent() ?? 'api')->delete();
-
-        $token = $user->createToken(
-            $request->userAgent() ?? 'api',
-            ['*'],
-            now()->addHours(8)   // token expires in 8 hours
-        )->plainTextToken;
-
-        AuditLog::log('login', 'session', null, $user->email,
-            "User '{$user->name}' logged in",
-            $user->id, $user->name);
-
-        return response()->json([
-            'token' => $token,
-            'user'  => $user,
-        ]);
     }
 
     public function logout(Request $request)
