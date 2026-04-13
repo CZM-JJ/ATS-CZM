@@ -1212,6 +1212,74 @@ html, body {
   color: #dc2626;
 }
 
+/* Apply success section */
+.apply-success-section {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 3rem 1.5rem;
+  min-height: 400px;
+}
+
+.apply-success-card {
+  text-align: center;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(248, 245, 239, 0.8));
+  border: 1px solid rgba(200, 164, 65, 0.25);
+  border-radius: 20px;
+  padding: 3rem 2.5rem;
+  max-width: 480px;
+  box-shadow: 0 8px 32px rgba(15, 61, 46, 0.08);
+  animation: formFadeUp 0.5s ease both;
+}
+
+.apply-success-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(22, 163, 74, 0.15), rgba(16, 185, 129, 0.2));
+  color: #16a34a;
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 16px rgba(22, 163, 74, 0.2);
+}
+
+.apply-success-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #0f3d2e;
+  margin: 0 0 1rem;
+  line-height: 1.2;
+}
+
+.apply-success-message {
+  font-size: 1rem;
+  color: #374151;
+  line-height: 1.6;
+  margin: 0 0 2rem;
+}
+
+.apply-success-btn {
+  background: linear-gradient(135deg, #176a4d, #1e8f6a);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 0.875rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 14px rgba(23, 106, 77, 0.3);
+}
+
+.apply-success-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(23, 106, 77, 0.4);
+}
+
 .resume-first-card {
   border: 1px solid rgba(200, 164, 65, 0.25);
   border-radius: 16px;

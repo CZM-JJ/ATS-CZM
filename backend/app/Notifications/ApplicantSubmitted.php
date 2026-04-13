@@ -3,15 +3,11 @@
 namespace App\Notifications;
 
 use App\Models\Applicant;
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Messages\MailMessage;
 
-class ApplicantSubmitted extends Notification implements ShouldQueue
+class ApplicantSubmitted extends Notification
 {
-    use Queueable;
-
     public function __construct(private readonly Applicant $applicant)
     {
     }
@@ -19,6 +15,11 @@ class ApplicantSubmitted extends Notification implements ShouldQueue
     public function via(object $notifiable): array
     {
         return ['mail'];
+    }
+
+    public function shouldQueue(object $notifiable): bool
+    {
+        return false;
     }
 
     public function toMail(object $notifiable): MailMessage

@@ -36,7 +36,7 @@ const extractError = async (response) => {
 }
 
 function AdminPage() {
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { token, user } = useAuth()
   const { canEdit, canDelete } = useRole()
 
@@ -45,8 +45,6 @@ function AdminPage() {
   const [loadingApplicants, setLoadingApplicants] = useState(false)
   const [applicants, setApplicants] = useState([])
   const [selectedId, setSelectedId] = useState(null)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [statusFilter, setStatusFilter] = useState('')
   const [viewMode, setViewMode] = useState('active')
   const [notes, setNotes] = useState([])
   const [notesLoading, setNotesLoading] = useState(false)
@@ -143,6 +141,9 @@ function AdminPage() {
     }
   }
 
+  // Initialize filters from URL params
+  const getParam = (key, defaultValue = '') => searchParams.get(key) ?? defaultValue
+
   useEffect(() => {
     if (!token) {
       return
@@ -162,16 +163,31 @@ function AdminPage() {
 
     const timer = setTimeout(() => {
       loadApplicants(token, {
-        search: searchTerm || undefined,
-        status: statusFilter || undefined,
+        search: getParam('search') || undefined,
+        status: getParam('status') || undefined,
         archived: viewMode === 'archived' ? 'only' : undefined,
-        page,
+        page: getParam('page') ? Number(getParam('page')) : 1,
         per_page: 10,
       })
     }, 300)
 
     return () => clearTimeout(timer)
-  }, [searchTerm, statusFilter, viewMode, page, token])
+  }, [token, searchParams, viewMode])
+
+  // Sync URL params when filters change
+  useEffect(() => {
+    const params = new URLSearchParams()
+    const search = getParam('search')
+    const status = getParam('status')
+    const currentPage = getParam('page') ? Number(getParam('page')) : 1
+
+    if (search) params.set('search', search)
+    if (status) params.set('status', status)
+    if (currentPage !== 1) params.set('page', String(currentPage))
+    if (viewMode === 'archived') params.set('archived', 'only')
+
+    setSearchParams(params, { replace: true })
+  }, [searchParams, viewMode, setSearchParams])
 
   useEffect(() => {
     if (!token || !selectedId || viewMode === 'archived') {
@@ -722,13 +738,33 @@ function AdminPage() {
                 className="input input-bordered"
                 type="search"
                 placeholder="Search name, email, role"
-                value={searchTerm}
-                onChange={(event) => { setPage(1); setSearchTerm(event.target.value) }}
+                value={getParam('search')}
+                onChange={(event) => {
+                  const newParams = new URLSearchParams(searchParams)
+                  const value = event.target.value
+                  if (value) {
+                    newParams.set('search', value)
+                  } else {
+                    newParams.delete('search')
+                  }
+                  newParams.set('page', '1')
+                  setSearchParams(newParams, { replace: true })
+                }}
               />
               <select
                 className="select select-bordered"
-                value={statusFilter}
-                onChange={(event) => { setPage(1); setStatusFilter(event.target.value) }}
+                value={getParam('status')}
+                onChange={(event) => {
+                  const newParams = new URLSearchParams(searchParams)
+                  const value = event.target.value
+                  if (value) {
+                    newParams.set('status', value)
+                  } else {
+                    newParams.delete('status')
+                  }
+                  newParams.set('page', '1')
+                  setSearchParams(newParams, { replace: true })
+                }}
                 disabled={viewMode === 'archived'}
               >
                 <option value="">All statuses</option>
@@ -763,7 +799,7 @@ function AdminPage() {
                   <div className="admin-empty-filter-state">
                     <span>🔍</span>
                     <p>No {viewMode === 'archived' ? 'archived' : 'active'} applicants match your filters.</p>
-                    <button type="button" onClick={() => { setSearchTerm(''); setStatusFilter('') }}>Clear filters</button>
+                    <button type="button" onClick={() => { setSearchParams({}) }}>Clear filters</button>
                   </div>
                 </li>
               ) : applicants.map((item) => (

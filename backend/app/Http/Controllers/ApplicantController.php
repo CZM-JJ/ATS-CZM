@@ -456,6 +456,13 @@ class ApplicantController extends Controller
                 ->notify(new ApplicantSubmissionReceived($applicant));
         }
 
+        if ($sendNotifications) {
+            // Send notification email to admin
+            $adminEmail = env('MAIL_FROM_ADDRESS', 'admin@example.com');
+            Notification::route('mail', $adminEmail)
+                ->notify(new ApplicantSubmitted($applicant));
+        }
+
         return $applicant;
     }
 

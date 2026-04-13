@@ -312,7 +312,7 @@ function ApplyPage() {
 
   useEffect(() => {
     formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }, [currentStep])
+  }, [currentStep, submitted])
 
   const handleSubmit = async (event) => {
     event.preventDefault()
@@ -939,6 +939,7 @@ function ApplyPage() {
             </div>
             ) : null}
 
+            {!submitted && (
             <div className="form-section" style={{ '--delay': '400ms' }}>
               <div className="apply-step-actions">
                 <button
@@ -990,6 +991,7 @@ function ApplyPage() {
               ) : null}
               </div>
             </div>
+            )}
           </div>
         </div>
       </form>

@@ -17,6 +17,11 @@ class ApplicantSubmissionReceived extends Notification
         return ['mail'];
     }
 
+    public function shouldQueue(object $notifiable): bool
+    {
+        return false;
+    }
+
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage())
