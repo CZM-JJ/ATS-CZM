@@ -14,7 +14,7 @@ class ApplicantStatusUpdated extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return [];
     }
 
     public function shouldQueue(object $notifiable): bool
@@ -25,10 +25,6 @@ class ApplicantStatusUpdated extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage())
-            ->subject('Application status updated')
-            ->greeting('Hi ' . $this->applicant->first_name . ',')
-            ->line('Your application status has been updated.')
-            ->line('New status: ' . $this->applicant->status)
-            ->line('If you have questions, reply to this email.');
+            ->subject('Application status updated');
     }
 }

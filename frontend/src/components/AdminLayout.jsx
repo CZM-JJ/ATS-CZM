@@ -1,26 +1,113 @@
-          // ...existing code...
-
-import { useState } from 'react'
-import { useEffect, useState as useStateReact } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useRole } from '../context/AuthContext'
+import { apiBase } from '../utils/apiBase'
 
 export default function AdminLayout({ children, pageTitle }) {
-  const { user, logout } = useAuth()
+  const { user, token, logout } = useAuth()
   const { isAdmin, canViewAnalytics, canManagePositions, canManageUsers } = useRole()
 
   const ROLE_LABELS = { admin: 'Administrator', hr_manager: 'HR Manager', hr_supervisor: 'HR Supervisor', recruiter: 'Recruiter' }
 
   const [navOpen, setNavOpen] = useState(false)
+  const [profileOpen, setProfileOpen] = useState(false)
+  const [notifOpen, setNotifOpen] = useState(false)
+  const [notifLoading, setNotifLoading] = useState(false)
+  const [notifError, setNotifError] = useState(null)
+  const [notifPayload, setNotifPayload] = useState({ unread_count: 0, unread: [], recent: [] })
 
   // Detect mobile for nav rendering
-  const [isMobile, setIsMobile] = useStateReact(window.innerWidth <= 600)
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 600)
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 600)
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [])
+
+  useEffect(() => {
+    const close = (e) => {
+      const target = e.target
+      if (!(target instanceof Node)) return
+      if (!document.querySelector('.admin-topbar')?.contains(target)) {
+        setProfileOpen(false)
+        setNotifOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', close)
+    return () => document.removeEventListener('mousedown', close)
+  }, [])
+
+  const fetchNotifications = async () => {
+    if (!token) return
+    setNotifLoading(true)
+    setNotifError(null)
+    try {
+      const res = await fetch(`${apiBase}/api/notifications`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (!res.ok) throw new Error()
+      const payload = await res.json()
+      setNotifPayload(payload)
+    } catch {
+      setNotifError('Unable to load notifications.')
+    } finally {
+      setNotifLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (!token) return
+    fetchNotifications()
+  }, [token])
+
+  const notifications = useMemo(() => {
+    // Prefer unread first, then recent.
+    const map = new Map()
+    for (const n of (notifPayload.unread || [])) map.set(n.id, n)
+    for (const n of (notifPayload.recent || [])) map.set(n.id, n)
+    return Array.from(map.values()).slice(0, 20)
+  }, [notifPayload])
+
+  const formatNotifText = (n) => {
+    const data = n?.data || {}
+    if (data.kind === 'applicant_submitted') {
+      return `New application: ${data.name || 'Applicant'} · ${data.position || '—'}`
+    }
+    return 'New notification'
+  }
+
+  const markNotifRead = async (id) => {
+    if (!token) return
+    try {
+      await fetch(`${apiBase}/api/notifications/${id}/read`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      setNotifPayload((prev) => ({
+        ...prev,
+        unread_count: Math.max(0, (prev.unread_count ?? 0) - 1),
+        unread: (prev.unread || []).filter((x) => x.id !== id),
+        recent: (prev.recent || []).map((x) => (x.id === id ? { ...x, read_at: new Date().toISOString() } : x)),
+      }))
+    } catch (_) {}
+  }
+
+  const markAllRead = async () => {
+    if (!token) return
+    try {
+      await fetch(`${apiBase}/api/notifications/read-all`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      setNotifPayload((prev) => ({
+        ...prev,
+        unread_count: 0,
+        unread: [],
+        recent: (prev.recent || []).map((x) => ({ ...x, read_at: x.read_at ?? new Date().toISOString() })),
+      }))
+    } catch (_) {}
+  }
 
   return (
     <section className="admin-shell">
@@ -153,20 +240,105 @@ export default function AdminLayout({ children, pageTitle }) {
             </nav>
           )}
           <div className="admin-profile">
-            <div className="admin-avatar" aria-hidden="true">
-              {(user?.name || 'U').slice(0, 1).toUpperCase()}
+            <div className="admin-topbar-actions">
+              <div className="admin-menu">
+                <button
+                  type="button"
+                  className="admin-icon-btn"
+                  aria-label="Notifications"
+                  onClick={() => {
+                    setNotifOpen((v) => !v)
+                    setProfileOpen(false)
+                    if (!notifOpen) fetchNotifications()
+                  }}
+                >
+                  <span className="admin-icon-btn-inner">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/>
+                      <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                    </svg>
+                    {(notifPayload.unread_count ?? 0) > 0 && (
+                      <span className="admin-badge">
+                        {Math.min(99, notifPayload.unread_count)}
+                      </span>
+                    )}
+                  </span>
+                </button>
+                {notifOpen && (
+                  <div
+                    className="admin-dropdown"
+                  >
+                    <div className="admin-dropdown-head">
+                      <strong>Notifications</strong>
+                      <button type="button" className="admin-dropdown-action" onClick={markAllRead} disabled={notifLoading || (notifPayload.unread_count ?? 0) === 0}>
+                        Mark all read
+                      </button>
+                    </div>
+                    <div className="admin-dropdown-divider" />
+                    {notifLoading ? (
+                      <div className="admin-dropdown-state">Loading…</div>
+                    ) : notifError ? (
+                      <div className="admin-dropdown-state admin-dropdown-state-error">{notifError}</div>
+                    ) : notifications.length ? (
+                      <div className="admin-dropdown-list">
+                        {notifications.map((n) => (
+                          <button
+                            key={n.id}
+                            type="button"
+                            onClick={() => { markNotifRead(n.id) }}
+                            className={`admin-dropdown-item${n.read_at ? '' : ' is-unread'}`}
+                          >
+                            <div className="admin-dropdown-item-title">{formatNotifText(n)}</div>
+                            <div className="admin-dropdown-item-meta">
+                              {n?.created_at ? new Date(n.created_at).toLocaleString() : ''}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="admin-dropdown-state">No notifications yet.</div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div className="admin-menu">
+                <button
+                  type="button"
+                  className="admin-profile-trigger"
+                  onClick={() => {
+                    setProfileOpen((v) => !v)
+                    setNotifOpen(false)
+                  }}
+                  aria-label="User menu"
+                >
+                  <div className="admin-avatar" aria-hidden="true">
+                    {(user?.name || 'U').slice(0, 1).toUpperCase()}
+                  </div>
+                  <div className="admin-profile-text">
+                    <p className="admin-name">{user?.name || 'User'}</p>
+                    <p className="admin-role">{ROLE_LABELS[user?.role] ?? user?.role ?? 'Staff'}</p>
+                  </div>
+                  <svg className="admin-profile-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </button>
+
+                {profileOpen && (
+                  <div
+                    className="admin-dropdown admin-dropdown--narrow"
+                  >
+                    <button
+                      type="button"
+                      onClick={logout}
+                      className="admin-dropdown-item admin-dropdown-item--danger"
+                    >
+                      Logout
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
-            <div>
-              <p className="admin-name">{user?.name || 'User'}</p>
-              <p className="admin-role">{ROLE_LABELS[user?.role] ?? user?.role ?? 'Staff'}</p>
-            </div>
-            <button
-              type="button"
-              className="btn btn-sm btn-outline admin-logout-btn"
-              onClick={logout}
-            >
-              Logout
-            </button>
           </div>
         </div>
       </header>

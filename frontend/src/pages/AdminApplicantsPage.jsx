@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth, useRole } from '../context/AuthContext'
@@ -138,43 +138,7 @@ function AdminApplicantsPage() {
   const [experienceMax, setExperienceMax]     = useState(() => getParam('experience_max', ''))
   const [ageRangeFilter, setAgeRangeFilter]   = useState(() => getParam('age_range', ''))
 
-  // Modal refs for auto-scroll
-  const deleteModalRef = useRef(null)
-  const forceModalRef = useRef(null)
-  const bulkDeleteModalRef = useRef(null)
-  const bulkRestoreModalRef = useRef(null)
-  const bulkForceModalRef = useRef(null)
-
-  // Auto-scroll to modal when it opens
-  useEffect(() => {
-    if (deleteTarget && deleteModalRef.current) {
-      deleteModalRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    }
-  }, [deleteTarget])
-
-  useEffect(() => {
-    if (forceTarget && forceModalRef.current) {
-      forceModalRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    }
-  }, [forceTarget])
-
-  useEffect(() => {
-    if (showBulkModal && bulkDeleteModalRef.current) {
-      bulkDeleteModalRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    }
-  }, [showBulkModal])
-
-  useEffect(() => {
-    if (showBulkRestoreModal && bulkRestoreModalRef.current) {
-      bulkRestoreModalRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    }
-  }, [showBulkRestoreModal])
-
-  useEffect(() => {
-    if (showBulkForceModal && bulkForceModalRef.current) {
-      bulkForceModalRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    }
-  }, [showBulkForceModal])
+  const anyConfirmModalOpen = !!deleteTarget || !!forceTarget || showBulkModal || showBulkRestoreModal || showBulkForceModal
   const [viewApplicant, setViewApplicant] = useState(null)
   const [viewNotes, setViewNotes]         = useState([])
   const [viewLoading, setViewLoading]     = useState(false)
@@ -259,13 +223,27 @@ function AdminApplicantsPage() {
   }, [viewTargetId])
 
   useEffect(() => {
-    if (!viewTargetId) return
+    if (!viewTargetId && !anyConfirmModalOpen) return
     const originalOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     return () => {
       document.body.style.overflow = originalOverflow
     }
-  }, [viewTargetId])
+  }, [viewTargetId, anyConfirmModalOpen])
+
+  useEffect(() => {
+    if (!anyConfirmModalOpen) return
+    const onKeyDown = (event) => {
+      if (event.key !== 'Escape') return
+      if (!deleting) setDeleteTarget(null)
+      if (!forcing) setForceTarget(null)
+      if (!bulkDeleting) setShowBulkModal(false)
+      if (!bulkRestoring) setShowBulkRestoreModal(false)
+      if (!bulkForcing) setShowBulkForceModal(false)
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [anyConfirmModalOpen, deleting, forcing, bulkDeleting, bulkRestoring, bulkForcing])
 
   const toggleDropdown = (e, applicantId) => {
     e.stopPropagation()
@@ -1406,9 +1384,15 @@ function AdminApplicantsPage() {
         </div>
       ), document.body)}
       {/* ── Archive confirmation modal ── */}
-      {deleteTarget && (
-        <div ref={deleteModalRef} className="del-modal-backdrop" onClick={() => !deleting && setDeleteTarget(null)}>
-          <div className="del-modal" onClick={(e) => e.stopPropagation()}>
+      {deleteTarget && createPortal((
+        <div className="del-modal-backdrop" onMouseDown={() => !deleting && setDeleteTarget(null)}>
+          <div
+            className="del-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Archive applicant confirmation"
+            onMouseDown={(e) => e.stopPropagation()}
+          >
             <div className="del-modal-icon">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
             </div>
@@ -1440,10 +1424,16 @@ function AdminApplicantsPage() {
             </div>
           </div>
         </div>
-      )}
-      {forceTarget && (
-        <div ref={forceModalRef} className="del-modal-backdrop" onClick={() => !forcing && setForceTarget(null)}>
-          <div className="del-modal" onClick={(e) => e.stopPropagation()}>
+      ), document.body)}
+      {forceTarget && createPortal((
+        <div className="del-modal-backdrop" onMouseDown={() => !forcing && setForceTarget(null)}>
+          <div
+            className="del-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Permanent delete applicant confirmation"
+            onMouseDown={(e) => e.stopPropagation()}
+          >
             <div className="del-modal-icon">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
             </div>
@@ -1475,11 +1465,17 @@ function AdminApplicantsPage() {
             </div>
           </div>
         </div>
-      )}
+      ), document.body)}
       {/* ── Bulk archive confirmation modal ── */}
-      {showBulkModal && (
-        <div ref={bulkDeleteModalRef} className="del-modal-backdrop" onClick={() => !bulkDeleting && setShowBulkModal(false)}>
-          <div className="del-modal" onClick={(e) => e.stopPropagation()}>
+      {showBulkModal && createPortal((
+        <div className="del-modal-backdrop" onMouseDown={() => !bulkDeleting && setShowBulkModal(false)}>
+          <div
+            className="del-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Bulk archive applicants confirmation"
+            onMouseDown={(e) => e.stopPropagation()}
+          >
             <div className="del-modal-icon">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
             </div>
@@ -1511,10 +1507,16 @@ function AdminApplicantsPage() {
             </div>
           </div>
         </div>
-      )}
-      {showBulkRestoreModal && (
-        <div ref={bulkRestoreModalRef} className="del-modal-backdrop" onClick={() => !bulkRestoring && setShowBulkRestoreModal(false)}>
-          <div className="del-modal" onClick={(e) => e.stopPropagation()}>
+      ), document.body)}
+      {showBulkRestoreModal && createPortal((
+        <div className="del-modal-backdrop" onMouseDown={() => !bulkRestoring && setShowBulkRestoreModal(false)}>
+          <div
+            className="del-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Bulk restore applicants confirmation"
+            onMouseDown={(e) => e.stopPropagation()}
+          >
             <div className="del-modal-icon">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             </div>
@@ -1546,10 +1548,16 @@ function AdminApplicantsPage() {
             </div>
           </div>
         </div>
-      )}
-      {showBulkForceModal && (
-        <div ref={bulkForceModalRef} className="del-modal-backdrop" onClick={() => !bulkForcing && setShowBulkForceModal(false)}>
-          <div className="del-modal" onClick={(e) => e.stopPropagation()}>
+      ), document.body)}
+      {showBulkForceModal && createPortal((
+        <div className="del-modal-backdrop" onMouseDown={() => !bulkForcing && setShowBulkForceModal(false)}>
+          <div
+            className="del-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Bulk permanent delete applicants confirmation"
+            onMouseDown={(e) => e.stopPropagation()}
+          >
             <div className="del-modal-icon">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
             </div>
@@ -1581,7 +1589,7 @@ function AdminApplicantsPage() {
             </div>
           </div>
         </div>
-      )}
+      ), document.body)}
     </AdminLayout>
   )
 }

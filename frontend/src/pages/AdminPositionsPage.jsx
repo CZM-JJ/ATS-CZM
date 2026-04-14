@@ -1,5 +1,5 @@
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useAuth } from '../context/AuthContext'
 import AdminLayout from '../components/AdminLayout'
@@ -79,22 +79,26 @@ function AdminPositionsPage() {
     }
   }
 
-  // Modal refs for auto-scroll
-  const addEditModalRef = useRef(null)
-  const deleteModalRef = useRef(null)
-
-  // Auto-scroll to modal when it opens
-  useEffect(() => {
-    if (modalOpen && addEditModalRef.current) {
-      addEditModalRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    }
-  }, [modalOpen])
+  const anyConfirmModalOpen = !!deleteTarget
+  const anyModalOpen = modalOpen || anyConfirmModalOpen
 
   useEffect(() => {
-    if (deleteTarget && deleteModalRef.current) {
-      deleteModalRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    if (!anyModalOpen) return
+    const originalOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = originalOverflow }
+  }, [anyModalOpen])
+
+  useEffect(() => {
+    if (!anyModalOpen) return
+    const onKeyDown = (event) => {
+      if (event.key !== 'Escape') return
+      if (!saving) setModalOpen(false)
+      if (!deleting) setDeleteTarget(null)
     }
-  }, [deleteTarget])
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [anyModalOpen, saving, deleting])
 
   const loadPositions = async (p = 1) => {
     setLoading(true)
@@ -400,8 +404,14 @@ function AdminPositionsPage() {
 
       {/* ── Add / Edit Modal ── */}
       {modalOpen && createPortal(
-        <div ref={addEditModalRef} className="pos-backdrop" onClick={closeModal}>
-          <div className="pos-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="pos-backdrop" onMouseDown={closeModal}>
+          <div
+            className="pos-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label={editing ? 'Edit position' : 'Add position'}
+            onMouseDown={(e) => e.stopPropagation()}
+          >
             <div className="pos-modal-head">
               <div className="pos-modal-head-icon">
                 {editing ? (
@@ -520,9 +530,15 @@ function AdminPositionsPage() {
 
 
       {/* ── Delete Confirm Modal ── */}
-      {deleteTarget && (
-        <div ref={deleteModalRef} className="del-modal-backdrop" onClick={() => !deleting && setDeleteTarget(null)}>
-          <div className="del-modal" onClick={(e) => e.stopPropagation()}>
+      {deleteTarget && createPortal((
+        <div className="del-modal-backdrop" onMouseDown={() => !deleting && setDeleteTarget(null)}>
+          <div
+            className="del-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Delete position confirmation"
+            onMouseDown={(e) => e.stopPropagation()}
+          >
             <div className="del-modal-icon">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
             </div>
@@ -540,7 +556,7 @@ function AdminPositionsPage() {
             </div>
           </div>
         </div>
-      )}
+      ), document.body)}
 
       {/* Bulk action bar (portal) */}
       {selectedIds.length > 0 && createPortal(

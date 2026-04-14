@@ -298,6 +298,16 @@ function AdminAnalyticsPage() {
   }
 
   const fmt = (n) => (n ?? 0).toLocaleString()
+  const periodLabel = useMemo(() => {
+    const selected = PERIOD_OPTIONS.find(opt => opt.value === period)
+    return selected?.label ?? 'Custom'
+  }, [period])
+
+  // Backend "recent_count" uses same period (capped at 30d), or 30d when All Time.
+  const recentDaysLabel = useMemo(() => {
+    if (period === 0) return '30d'
+    return `${Math.min(period, 30)}d`
+  }, [period])
 
   // Calculate metrics
   const total = dashboard?.total_applicants ?? 0
@@ -392,9 +402,9 @@ function AdminAnalyticsPage() {
         <div className="kpi-grid">
           <KpiCard
             icon="👥"
-            label="Total Applicants"
+            label={`Total Applicants (${periodLabel})`}
             value={loading ? '—' : fmt(total)}
-            sub={loading ? '' : `${dashboard?.recent_count ?? 0} new in last 30d`}
+            sub={loading ? '' : `${dashboard?.recent_count ?? 0} new in last ${recentDaysLabel}`}
             trend={12.5}
             isPositive={true}
             color="#0f3d2e"

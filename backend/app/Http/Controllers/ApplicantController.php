@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\AuditLog;
 use App\Models\Applicant;
 use App\Models\User;
-use App\Notifications\ApplicantStatusUpdated;
 use App\Notifications\ApplicantSubmitted;
 use App\Notifications\ApplicantSubmissionReceived;
 use Illuminate\Http\Request;
@@ -189,11 +188,6 @@ class ApplicantController extends Controller
         if ($previousStatus !== $applicant->status) {
             AuditLog::log('status_change', 'applicant', $applicant->id, $fullName,
                 "Status changed: {$previousStatus} → {$applicant->status} for '{$fullName}'");
-
-            if ($applicant->email_address) {
-                Notification::route('mail', $applicant->email_address)
-                    ->notify(new ApplicantStatusUpdated($applicant));
-            }
         } else {
             AuditLog::log('update', 'applicant', $applicant->id, $fullName,
                 "Updated applicant '{$fullName}'");
@@ -457,10 +451,11 @@ class ApplicantController extends Controller
         }
 
         if ($sendNotifications) {
-            // Send notification email to admin
-            $adminEmail = env('MAIL_FROM_ADDRESS', 'admin@example.com');
-            Notification::route('mail', $adminEmail)
-                ->notify(new ApplicantSubmitted($applicant));
+            // Create in-app notifications for ATS users (admins/recruiters)
+            $recipients = User::query()->get();
+            if ($recipients->isNotEmpty()) {
+                Notification::send($recipients, new ApplicantSubmitted($applicant));
+            }
         }
 
         return $applicant;

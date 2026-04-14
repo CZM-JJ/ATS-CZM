@@ -4,7 +4,6 @@ namespace App\Notifications;
 
 use App\Models\Applicant;
 use Illuminate\Notifications\Notification;
-use Illuminate\Notifications\Messages\MailMessage;
 
 class ApplicantSubmitted extends Notification
 {
@@ -14,7 +13,7 @@ class ApplicantSubmitted extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return ['database'];
     }
 
     public function shouldQueue(object $notifiable): bool
@@ -22,16 +21,16 @@ class ApplicantSubmitted extends Notification
         return false;
     }
 
-    public function toMail(object $notifiable): MailMessage
+    public function toDatabase(object $notifiable): array
     {
-        return (new MailMessage())
-            ->subject('New applicant submission')
-            ->greeting('Hello')
-            ->line('A new applicant has submitted an application.')
-            ->line('Name: ' . $this->applicant->first_name . ' ' . $this->applicant->last_name)
-            ->line('Position: ' . $this->applicant->position_applied_for)
-            ->line('Email: ' . $this->applicant->email_address)
-            ->line('Contact: ' . $this->applicant->contact_number)
-            ->line('Status: ' . $this->applicant->status);
+        return [
+            'kind' => 'applicant_submitted',
+            'applicant_id' => $this->applicant->id,
+            'name' => trim($this->applicant->first_name . ' ' . $this->applicant->last_name),
+            'position' => $this->applicant->position_applied_for,
+            'email' => $this->applicant->email_address,
+            'contact' => $this->applicant->contact_number,
+            'status' => $this->applicant->status,
+        ];
     }
 }

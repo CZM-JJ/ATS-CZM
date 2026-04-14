@@ -93,12 +93,59 @@ const extractError = async (response) => {
   return 'Unable to submit your application. Please try again.'
 }
 
+const extractXhrError = (xhr) => {
+  try {
+    const payload = JSON.parse(xhr.responseText || '{}')
+    if (payload?.message) {
+      return payload.message
+    }
+    if (payload?.errors) {
+      const firstKey = Object.keys(payload.errors)[0]
+      if (firstKey) {
+        return payload.errors[firstKey][0]
+      }
+    }
+  } catch (err) {
+    // ignore parse errors
+  }
+
+  return 'Unable to submit your application. Please try again.'
+}
+
+const submitPublicApplicant = (url, formData, { onProgress, timeoutMs = 120000 } = {}) => {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest()
+
+    xhr.open('POST', url, true)
+    xhr.responseType = 'text'
+    xhr.timeout = timeoutMs
+    xhr.setRequestHeader('Accept', 'application/json')
+
+    if (xhr.upload && typeof onProgress === 'function') {
+      xhr.upload.onprogress = (event) => {
+        if (!event.lengthComputable) return
+        const percent = Math.max(0, Math.min(100, Math.round((event.loaded / event.total) * 100)))
+        onProgress(percent)
+      }
+    }
+
+    xhr.onload = () => resolve(xhr)
+    xhr.onerror = () => reject(new Error('Network error'))
+    xhr.ontimeout = () => reject(new Error('Timeout'))
+    xhr.onabort = () => reject(new Error('Aborted'))
+
+    xhr.send(formData)
+  })
+}
+
 function ApplyPage() {
   const [form, setForm] = useState(initialForm)
   const [customGender, setCustomGender] = useState('')
   const [customVacancySource, setCustomVacancySource] = useState('')
   const [cvFile, setCvFile] = useState(null)
   const [submitting, setSubmitting] = useState(false)
+  const [submitPhase, setSubmitPhase] = useState(null) // 'uploading' | 'processing' | null
+  const [uploadProgress, setUploadProgress] = useState(null) // 0-100 | null
   const [message, setMessage] = useState(null)
   const [error, setError] = useState(null)
   const [positions, setPositions] = useState([])
@@ -317,25 +364,33 @@ function ApplyPage() {
   const handleSubmit = async (event) => {
     event.preventDefault()
     setSubmitting(true)
+    setSubmitPhase('uploading')
+    setUploadProgress(0)
     setMessage(null)
     setError(null)
 
     if (!termsAccepted) {
       setError('Please accept the terms and conditions.')
       setSubmitting(false)
+      setSubmitPhase(null)
+      setUploadProgress(null)
       return
     }
 
     try {
-      const response = await fetch(`${apiBase}/api/public/applicants`, {
-        method: 'POST',
-        body: buildFormData(),
+      const url = `${apiBase}/api/public/applicants`
+      const xhr = await submitPublicApplicant(url, buildFormData(), {
+        onProgress: (percent) => {
+          setUploadProgress(percent)
+          if (percent >= 100) {
+            setSubmitPhase('processing')
+          }
+        },
+        timeoutMs: 120000,
       })
 
-      if (!response.ok) {
-        const errorMessage = await extractError(response)
-        setError(errorMessage)
-        setSubmitting(false)
+      if (xhr.status < 200 || xhr.status >= 300) {
+        setError(extractXhrError(xhr))
         return
       }
 
@@ -349,9 +404,15 @@ function ApplyPage() {
       setFormStartedAt(Date.now())
       setTermsAccepted(false)
     } catch (err) {
-      setError('Network error. Please try again in a moment.')
+      if (String(err?.message || '').toLowerCase().includes('timeout')) {
+        setError('Submission is taking too long. Please check your connection and try again.')
+      } else {
+        setError('Network error. Please try again in a moment.')
+      }
     } finally {
       setSubmitting(false)
+      setSubmitPhase(null)
+      setUploadProgress(null)
     }
   }
 
@@ -967,7 +1028,11 @@ function ApplyPage() {
                         <svg className="apply-submit-spinner" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                           <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="42 14" />
                         </svg>
-                        Submitting your application...
+                        {submitPhase === 'processing'
+                          ? 'Finalizing your application...'
+                          : uploadProgress !== null
+                            ? `Uploading resume... ${uploadProgress}%`
+                            : 'Submitting your application...'}
                       </span>
                     ) : (
                       'Submit Application'

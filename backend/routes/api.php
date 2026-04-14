@@ -1,10 +1,11 @@
-﻿<?php
+<?php
 
 use App\Http\Controllers\ApplicantController;
 use App\Http\Controllers\ApplicantNoteController;
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PositionController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\UserController;
@@ -19,6 +20,11 @@ Route::get('positions', [PositionController::class, 'publicIndex']);
 Route::middleware('auth:sanctum')->group(function (): void {
     Route::post('logout', [AuthController::class, 'logout']);
     Route::get('me', [AuthController::class, 'me']);
+
+    // In-app notifications
+    Route::get('notifications', [NotificationController::class, 'index']);
+    Route::patch('notifications/{notificationId}/read', [NotificationController::class, 'markRead']);
+    Route::patch('notifications/read-all', [NotificationController::class, 'markAllRead']);
 
     // Applicants - all roles can read & add notes
     Route::get('applicants', [ApplicantController::class, 'index']);

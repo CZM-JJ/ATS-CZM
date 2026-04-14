@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { NavLink, useSearchParams } from 'react-router-dom'
 import { useAuth, useRole } from '../context/AuthContext'
 import AdminLayout from '../components/AdminLayout'
@@ -66,22 +67,27 @@ function AdminPage() {
   const [forcing, setForcing]           = useState(false)
   const [statusSaving, setStatusSaving] = useState(false)
 
-  // Modal refs for auto-scroll
-  const deleteModalRef = useRef(null)
-  const forceModalRef = useRef(null)
-
-  // Auto-scroll to modal when it opens
-  useEffect(() => {
-    if (deleteTarget && deleteModalRef.current) {
-      deleteModalRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    }
-  }, [deleteTarget])
+  const anyConfirmModalOpen = !!deleteTarget || !!forceTarget
 
   useEffect(() => {
-    if (forceTarget && forceModalRef.current) {
-      forceModalRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    if (!anyConfirmModalOpen) return
+    const originalOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = originalOverflow
     }
-  }, [forceTarget])
+  }, [anyConfirmModalOpen])
+
+  useEffect(() => {
+    if (!anyConfirmModalOpen) return
+    const onKeyDown = (event) => {
+      if (event.key !== 'Escape') return
+      if (!deleting) setDeleteTarget(null)
+      if (!forcing) setForceTarget(null)
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [anyConfirmModalOpen, deleting, forcing])
 
   const loadApplicants = async (activeToken, filters = {}, preferredId = null) => {
     setLoadingApplicants(true)
@@ -1153,9 +1159,15 @@ function AdminPage() {
           </section>
         </div>
       </div>
-      {deleteTarget && (
-        <div ref={deleteModalRef} className="del-modal-backdrop" onClick={() => !deleting && setDeleteTarget(null)}>
-          <div className="del-modal" onClick={(e) => e.stopPropagation()}>
+      {deleteTarget && createPortal((
+        <div className="del-modal-backdrop" onMouseDown={() => !deleting && setDeleteTarget(null)}>
+          <div
+            className="del-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Archive applicant confirmation"
+            onMouseDown={(e) => e.stopPropagation()}
+          >
             <div className="del-modal-icon">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
             </div>
@@ -1187,10 +1199,16 @@ function AdminPage() {
             </div>
           </div>
         </div>
-      )}
-      {forceTarget && (
-        <div ref={forceModalRef} className="del-modal-backdrop" onClick={() => !forcing && setForceTarget(null)}>
-          <div className="del-modal" onClick={(e) => e.stopPropagation()}>
+      ), document.body)}
+      {forceTarget && createPortal((
+        <div className="del-modal-backdrop" onMouseDown={() => !forcing && setForceTarget(null)}>
+          <div
+            className="del-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Permanent delete applicant confirmation"
+            onMouseDown={(e) => e.stopPropagation()}
+          >
             <div className="del-modal-icon">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
             </div>
@@ -1222,7 +1240,7 @@ function AdminPage() {
             </div>
           </div>
         </div>
-      )}
+      ), document.body)}
     </AdminLayout>
   )
 }
