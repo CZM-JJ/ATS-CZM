@@ -69,6 +69,7 @@ function AdminPage() {
   const [forcing, setForcing]           = useState(false)
   const [statusSaving, setStatusSaving] = useState(false)
   const detailRef = useRef(null)
+  const listItemRefs = useRef({})
 
   const anyConfirmModalOpen = !!deleteTarget || !!restoreTarget || !!forceTarget
 
@@ -111,14 +112,32 @@ function AdminPage() {
 
       const payload = await response.json()
       const data = payload.data || []
-      setApplicants(data)
+      let nextApplicants = data
+
+      // If a preferred applicant is requested (e.g. from a notification),
+      // ensure their details can be shown even if they're not in the current page slice.
+      if (preferredId !== null && !data.some((a) => a.id === preferredId)) {
+        try {
+          const applicantRes = await fetch(`${apiBase}/api/applicants/${preferredId}`, {
+            headers: { Authorization: `Bearer ${activeToken}` },
+          })
+          if (applicantRes.ok) {
+            const applicantPayload = await applicantRes.json()
+            if (applicantPayload?.id) {
+              nextApplicants = [applicantPayload, ...data]
+            }
+          }
+        } catch (_) {}
+      }
+
+      setApplicants(nextApplicants)
       setPage(payload.meta?.current_page ?? payload.current_page ?? 1)
       setLastPage(payload.meta?.last_page ?? payload.last_page ?? 1)
       setTotal(payload.meta?.total ?? payload.total ?? 0)
       setSelectedId((prev) => {
         if (preferredId !== null) return preferredId
-        if (prev && data.some((a) => a.id === prev)) return prev
-        return data[0]?.id || null
+        if (prev && nextApplicants.some((a) => a.id === prev)) return prev
+        return nextApplicants[0]?.id || null
       })
     } finally {
       setLoadingApplicants(false)
@@ -179,10 +198,12 @@ function AdminPage() {
     const search = getParam('search')
     const status = getParam('status')
     const currentPage = getParam('page') ? Number(getParam('page')) : 1
+    const applicant = getParam('applicant')
 
     if (search) params.set('search', search)
     if (status) params.set('status', status)
     if (currentPage !== 1) params.set('page', String(currentPage))
+    if (applicant) params.set('applicant', applicant)
     if (viewMode === 'archived') params.set('archived', 'only')
 
     setSearchParams(params, { replace: true })
@@ -680,6 +701,18 @@ function AdminPage() {
     })
   }, [selectedApplicant, viewMode])
 
+  useEffect(() => {
+    if (!selectedId) return
+    const targetedApplicantId = searchParams.get('applicant')
+    if (!targetedApplicantId) return
+    if (String(selectedId) !== targetedApplicantId) return
+
+    requestAnimationFrame(() => {
+      listItemRefs.current[selectedId]?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      detailRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+  }, [selectedId, searchParams])
+
   const getGreeting = () => {
     const h = new Date().getHours()
     if (h < 12) return 'Good morning'
@@ -734,7 +767,7 @@ function AdminPage() {
                 Archived
               </button>
             </div>
-            <NavLink to="/admin/applicants" className="btn btn-outline">
+            <NavLink to="/admin/applicants" className="admin-view-table-btn">
               View full table
             </NavLink>
           </div>
@@ -826,6 +859,10 @@ function AdminPage() {
                     type="button"
                     className={`admin-list-item ${item.id === selectedId ? 'active' : ''}`}
                     onClick={() => setSelectedId(item.id)}
+                    ref={(el) => {
+                      if (el) listItemRefs.current[item.id] = el
+                      else delete listItemRefs.current[item.id]
+                    }}
                   >
                     <div className="admin-list-avatar" aria-hidden="true" style={getAvatarColor(item.first_name, item.last_name)}>
                       {item.first_name?.slice(0, 1)}{item.last_name?.slice(0, 1)}
@@ -935,7 +972,7 @@ function AdminPage() {
                     <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                       <button
                         type="button"
-                        className="btn btn-sm btn-outline"
+                        className="admin-detail-action-btn admin-detail-action-btn-download"
                         onClick={handleDownloadApplicantDetails}
                       >
                         Download Details
@@ -944,7 +981,7 @@ function AdminPage() {
                         viewMode === 'active' ? (
                           <button
                             type="button"
-                            className="btn btn-sm btn-error btn-outline"
+                            className="admin-detail-action-btn admin-detail-action-btn-archive"
                             onClick={() => setDeleteTarget({ id: selectedApplicant.id, name: `${toName(selectedApplicant.first_name)} ${toName(selectedApplicant.last_name)}` })}
                           >
                             Archive Applicant
@@ -953,14 +990,14 @@ function AdminPage() {
                           <>
                             <button
                               type="button"
-                              className="btn btn-sm btn-outline"
+                              className="admin-detail-action-btn admin-detail-action-btn-restore"
                               onClick={() => setRestoreTarget({ id: selectedApplicant.id, name: `${toName(selectedApplicant.first_name)} ${toName(selectedApplicant.last_name)}` })}
                             >
                               Restore Applicant
                             </button>
                             <button
                               type="button"
-                              className="btn btn-sm btn-error"
+                              className="admin-detail-action-btn admin-detail-action-btn-danger"
                               onClick={() => setForceTarget({ id: selectedApplicant.id, name: `${toName(selectedApplicant.first_name)} ${toName(selectedApplicant.last_name)}` })}
                             >
                               Delete Permanently

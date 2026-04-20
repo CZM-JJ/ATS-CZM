@@ -1102,27 +1102,27 @@ function AdminApplicantsPage() {
           </table>
         </div>
 
-        <div className="admin-table-footer">
-          <span>{total > 0 ? `${firstItem}–${lastItem} of ${total}` : '0 results'}</span>
-          <div className="admin-table-actions">
+        <div className="admin-table-footer admin-pagination-bar">
+          <span className="admin-pagination-info">{total > 0 ? `${firstItem}–${lastItem} of ${total}` : '0 results'}</span>
+          <div className="admin-pagination-controls">
             <button
               type="button"
-              className="btn btn-sm btn-outline"
+              className="admin-pg-btn"
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page <= 1}
             >
-              ← Previous
+              ‹ Prev
             </button>
-            <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>
+            <span className="admin-pagination-current">
               Page {page} of {lastPage}
             </span>
             <button
               type="button"
-              className="btn btn-sm btn-outline"
+              className="admin-pg-btn"
               onClick={() => setPage((p) => Math.min(lastPage, p + 1))}
               disabled={page >= lastPage}
             >
-              Next →
+              Next ›
             </button>
           </div>
         </div>

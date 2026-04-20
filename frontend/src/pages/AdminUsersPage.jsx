@@ -169,21 +169,29 @@ export default function AdminUsersPage() {
   const pwColor    = ['transparent','#dc2626','#d97706','#15803d'][pwStrength]
   const pwLabel    = ['','Too short','Good','Strong'][pwStrength]
 
+  const todayLabel = new Date().toLocaleDateString('en-US', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+  })
+
+  const getGreeting = () => {
+    const h = new Date().getHours()
+    if (h < 12) return 'Good morning'
+    if (h < 18) return 'Good afternoon'
+    return 'Good evening'
+  }
+
   return (
     <AdminLayout pageTitle="Users">
 
       {/* ── Header ── */}
-      <div className="um-header">
-        <div>
-          <h2 className="um-header-title">User Management</h2>
-          <p className="um-header-sub">Manage who has access and what they can do.</p>
+      <div className="admin-welcome">
+        <div className="admin-welcome-text">
+          <h2>{getGreeting()}, {me?.name?.split(' ')[0] || 'there'} 👋</h2>
+          <p>
+            Manage team access and platform permissions for <strong>{users.length}</strong> user{users.length !== 1 ? 's' : ''}.
+          </p>
         </div>
-        {isAdmin && (
-          <button type="button" className="um-add-btn" onClick={openCreate}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Add User
-          </button>
-        )}
+        <span className="admin-welcome-date">{todayLabel}</span>
       </div>
 
       {/* ── Toasts ── */}
@@ -197,6 +205,12 @@ export default function AdminUsersPage() {
             <h3 className="um-card-title">System Users</h3>
             <span className="um-badge">{users.length}</span>
           </div>
+          {isAdmin && (
+            <button type="button" className="pos-add-btn" onClick={openCreate}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Add User
+            </button>
+          )}
         </div>
         <div className="admin-table-wrap">
           <table className="admin-table um-table">

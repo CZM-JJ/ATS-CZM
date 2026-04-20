@@ -17,7 +17,7 @@ const emptyForm = {
 
 
 function AdminPositionsPage() {
-  const { token } = useAuth()
+  const { token, user } = useAuth()
 
   const [positions, setPositions]   = useState([])
   const [loading, setLoading]       = useState(false)
@@ -248,17 +248,26 @@ function AdminPositionsPage() {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
   })
 
+  const getGreeting = () => {
+    const h = new Date().getHours()
+    if (h < 12) return 'Good morning'
+    if (h < 18) return 'Good afternoon'
+    return 'Good evening'
+  }
+
   return (
     <AdminLayout pageTitle="Positions">
 
       {/* ── Welcome ── */}
       <div className="admin-welcome">
         <div className="admin-welcome-text">
-          <h2>Positions 📋</h2>
-          <p>Manage job openings shown on the application form. Only <strong>active</strong> positions appear to applicants.</p>
+          <h2>{getGreeting()}, {user?.name?.split(' ')[0] || 'there'} 👋</h2>
+          <p>
+            Manage job openings shown on the application form. Only <strong>active</strong> positions are visible to applicants.
+          </p>
         </div>
         <span className="admin-welcome-date">{todayLabel}</span>
-
+      </div>
 
       {/* ── Main card ── */}
       <div className="admin-card" style={{ width: '100%' }}>
@@ -385,18 +394,15 @@ function AdminPositionsPage() {
             </tbody>
           </table>
         </div>
-      </div>
-
-
 
         {/* Pagination */}
         {lastPage > 1 && (
-          <div className="admin-table-footer">
-            <span>{total} total</span>
-            <div className="admin-table-actions">
-              <button className="btn btn-sm btn-outline" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>← Previous</button>
-              <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Page {page} of {lastPage}</span>
-              <button className="btn btn-sm btn-outline" disabled={page >= lastPage} onClick={() => setPage((p) => p + 1)}>Next →</button>
+          <div className="admin-table-footer admin-pagination-bar">
+            <span className="admin-pagination-info">{total} total</span>
+            <div className="admin-pagination-controls">
+              <button className="admin-pg-btn" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>‹ Prev</button>
+              <span className="admin-pagination-current">Page {page} of {lastPage}</span>
+              <button className="admin-pg-btn" disabled={page >= lastPage} onClick={() => setPage((p) => p + 1)}>Next ›</button>
             </div>
           </div>
         )}

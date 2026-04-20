@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useRole } from '../context/AuthContext'
 import { apiBase } from '../utils/apiBase'
@@ -7,6 +7,7 @@ import { apiBase } from '../utils/apiBase'
 export default function AdminLayout({ children, pageTitle }) {
   const { user, token, logout } = useAuth()
   const { isAdmin, canViewAnalytics, canManagePositions, canManageUsers } = useRole()
+  const navigate = useNavigate()
 
   const ROLE_LABELS = { admin: 'Administrator', hr_manager: 'HR Manager', hr_supervisor: 'HR Supervisor', recruiter: 'Recruiter' }
 
@@ -66,7 +67,7 @@ export default function AdminLayout({ children, pageTitle }) {
     const map = new Map()
     for (const n of (notifPayload.unread || [])) map.set(n.id, n)
     for (const n of (notifPayload.recent || [])) map.set(n.id, n)
-    return Array.from(map.values()).slice(0, 20)
+    return Array.from(map.values())
   }, [notifPayload])
 
   const formatNotifText = (n) => {
@@ -75,6 +76,32 @@ export default function AdminLayout({ children, pageTitle }) {
       return `New application: ${data.name || 'Applicant'} · ${data.position || '—'}`
     }
     return 'New notification'
+  }
+
+  const formatNotifTime = (iso) => {
+    if (!iso) return ''
+    return new Date(iso).toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    })
+  }
+
+  const formatNotifTimeAgo = (iso) => {
+    if (!iso) return ''
+    const diffSec = Math.floor((Date.now() - new Date(iso).getTime()) / 1000)
+    if (diffSec < 60) return 'just now'
+    if (diffSec < 3600) return `${Math.floor(diffSec / 60)}m ago`
+    if (diffSec < 86400) return `${Math.floor(diffSec / 3600)}h ago`
+    if (diffSec < 604800) return `${Math.floor(diffSec / 86400)}d ago`
+    return new Date(iso).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    })
   }
 
   const markNotifRead = async (id) => {
@@ -107,6 +134,24 @@ export default function AdminLayout({ children, pageTitle }) {
         recent: (prev.recent || []).map((x) => ({ ...x, read_at: x.read_at ?? new Date().toISOString() })),
       }))
     } catch (_) {}
+  }
+
+  const handleNotificationClick = async (notification) => {
+    const notifId = notification?.id
+    if (!notifId) return
+
+    await markNotifRead(notifId)
+
+    const data = notification?.data || {}
+    const isApplicantSubmission = data.kind === 'applicant_submitted'
+    const applicantId = data.applicant_id ?? data.id ?? data.applicant?.id
+
+    setNotifOpen(false)
+    setProfileOpen(false)
+
+    if (isApplicantSubmission && applicantId) {
+      navigate(`/admin?applicant=${encodeURIComponent(String(applicantId))}`)
+    }
   }
 
   return (
@@ -285,12 +330,12 @@ export default function AdminLayout({ children, pageTitle }) {
                           <button
                             key={n.id}
                             type="button"
-                            onClick={() => { markNotifRead(n.id) }}
+                            onClick={() => { handleNotificationClick(n) }}
                             className={`admin-dropdown-item${n.read_at ? '' : ' is-unread'}`}
                           >
                             <div className="admin-dropdown-item-title">{formatNotifText(n)}</div>
-                            <div className="admin-dropdown-item-meta">
-                              {n?.created_at ? new Date(n.created_at).toLocaleString() : ''}
+                            <div className="admin-dropdown-item-meta" title={formatNotifTime(n?.created_at)}>
+                              {formatNotifTimeAgo(n?.created_at)}
                             </div>
                           </button>
                         ))}
@@ -328,12 +373,23 @@ export default function AdminLayout({ children, pageTitle }) {
                   <div
                     className="admin-dropdown admin-dropdown--narrow"
                   >
+                    <div className="admin-dropdown-profile-head">
+                      <div className="admin-avatar" aria-hidden="true">
+                        {(user?.name || 'U').slice(0, 1).toUpperCase()}
+                      </div>
+                      <div className="admin-dropdown-profile-meta">
+                        <strong>{user?.name || 'User'}</strong>
+                        <span>{ROLE_LABELS[user?.role] ?? user?.role ?? 'Staff'}</span>
+                      </div>
+                    </div>
+                    <div className="admin-dropdown-divider" />
                     <button
                       type="button"
                       onClick={logout}
                       className="admin-dropdown-item admin-dropdown-item--danger"
                     >
-                      Logout
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                      Sign out
                     </button>
                   </div>
                 )}
