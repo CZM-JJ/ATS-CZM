@@ -9,6 +9,7 @@ const initialForm = {
   first_name: '',
   middle_name: '',
   permanent_address: '',
+  current_address: '',
   gender: '',
   civil_status: '',
   birthdate: '',
@@ -159,6 +160,7 @@ function ApplyPage() {
   const [furthestStepReached, setFurthestStepReached] = useState(1)
   const [dragOver, setDragOver] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [sameAsPermanent, setSameAsPermanent] = useState(false)
   const formRef = useRef(null)
   const feedbackRef = useRef(null)
 
@@ -177,12 +179,13 @@ function ApplyPage() {
         'last_name',
         'first_name',
         'permanent_address',
+        'current_address',
         'gender',
         'civil_status',
         'birthdate',
       ],
-      3: ['highest_education_level', 'last_school_attended'],
-      4: ['contact_number', 'email_address', 'preferred_work_location'],
+      3: ['highest_education_level', 'last_school_attended', 'year_graduated', 'total_work_experience_years'],
+      4: ['contact_number', 'email_address', 'preferred_work_location', 'vacancy_source'],
     }
 
     if (!requiredByStep[step]) {
@@ -365,6 +368,12 @@ function ApplyPage() {
     const timer = setTimeout(() => setError(null), 5000)
     return () => clearTimeout(timer)
   }, [error])
+
+  useEffect(() => {
+    if (sameAsPermanent) {
+      setForm((prev) => ({ ...prev, current_address: prev.permanent_address }))
+    }
+  }, [sameAsPermanent, form.permanent_address])
 
   const handleSubmit = async (event) => {
     event.preventDefault()
@@ -596,137 +605,194 @@ function ApplyPage() {
             {!submitted && currentStep === 2 ? (
             <div className="form-section" style={{ '--delay': '0ms' }}>
               <div className="divider apply-divider">Position &amp; Identity</div>
-              <div className="grid gap-4 md:grid-cols-2">
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">Position applied for *</span>
-                </label>
-                {positionsLoading ? (
-                  <div className="skeleton h-11 w-full" />
-                ) : positions.length > 0 ? (
+
+              {/* Row 1: Position, Last Name, First Name, Middle Name */}
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <div className="form-control lg:col-span-1">
+                  <label className="label">
+                    <span className="label-text">Position applied for *</span>
+                  </label>
+                  {positionsLoading ? (
+                    <div className="skeleton h-11 w-full" />
+                  ) : positions.length > 0 ? (
+                    <select
+                      name="position_applied_for"
+                      value={form.position_applied_for}
+                      onChange={handleChange}
+                      required
+                      className="select select-bordered select-lg w-full bg-white transition-all duration-200 ease-out hover:-translate-y-0.5 focus:-translate-y-0.5 focus:shadow-lg"
+                    >
+                      {[{ value: '', label: 'Select' }, ...positions.map((position) => ({
+                        value: position.title,
+                        label: position.title
+                      }))].map((option) => (
+                        <option key={`position-${option.value || 'empty'}`} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      name="position_applied_for"
+                      value={form.position_applied_for}
+                      onChange={handleChange}
+                      placeholder="e.g., Frontend Developer"
+                      required
+                      className="input input-bordered input-lg w-full bg-white transition-all duration-200 ease-out hover:-translate-y-0.5 focus:-translate-y-0.5 focus:shadow-lg"
+                    />
+                  )}
+                  <label className="label">
+                    {positionsError ? <span className="label-text-alt text-error">{positionsError}</span> : null}
+                  </label>
+                </div>
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text">Last name *</span>
+                  </label>
+                  <input className="input input-bordered input-lg w-full bg-white transition-all duration-200 ease-out hover:-translate-y-0.5 focus:-translate-y-0.5 focus:shadow-lg" name="last_name" value={form.last_name} onChange={handleChange} required />
+                </div>
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text">First name *</span>
+                  </label>
+                  <input className="input input-bordered input-lg w-full bg-white transition-all duration-200 ease-out hover:-translate-y-0.5 focus:-translate-y-0.5 focus:shadow-lg" name="first_name" value={form.first_name} onChange={handleChange} required />
+                </div>
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text">Middle name</span>
+                  </label>
+                  <input className="input input-bordered input-lg w-full bg-white transition-all duration-200 ease-out hover:-translate-y-0.5 focus:-translate-y-0.5 focus:shadow-lg" name="middle_name" value={form.middle_name} onChange={handleChange} />
+                </div>
+              </div>
+
+              {/* Address Section */}
+              <div className="mt-6">
+                <div className="bg-base-100 border border-base-300 rounded-xl p-5 shadow-sm">
+                  <div className="grid gap-4 lg:grid-cols-2">
+                    {/* Permanent Address */}
+                    <div className="form-control">
+                      <label className="label pb-1">
+                        <span className="label-text font-medium">Permanent Address *</span>
+                      </label>
+                      <textarea
+                        name="permanent_address"
+                        value={form.permanent_address}
+                        onChange={handleChange}
+                        placeholder="Street, City, Province, ZIP"
+                        required
+                        className="textarea textarea-bordered textarea-md min-h-[100px] w-full bg-white transition-all duration-200 ease-out hover:-translate-y-0.5 focus:-translate-y-0.5 focus:shadow-lg"
+                      />
+                    </div>
+
+                    {/* Current Address with Same As Option */}
+                    <div className="form-control">
+                      <label className="label pb-1">
+                        <span className="label-text font-medium">Current Address *</span>
+                      </label>
+                      <textarea
+                        name="current_address"
+                        value={form.current_address}
+                        onChange={handleChange}
+                        placeholder="Street, City, Province, ZIP"
+                        required
+                        disabled={sameAsPermanent}
+                        className={`textarea textarea-bordered textarea-md min-h-[100px] w-full bg-white transition-all duration-200 ease-out hover:-translate-y-0.5 focus:-translate-y-0.5 focus:shadow-lg ${sameAsPermanent ? 'bg-gray-100 text-gray-500' : ''}`}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Same As Question Box */}
+                  <div className="mt-4 pt-4 border-t border-base-200">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <p className="text-sm font-medium text-base-content">Is your current address the same as your permanent address?</p>
+                      <div className="flex gap-3">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSameAsPermanent(true)
+                            setForm((prev) => ({ ...prev, current_address: prev.permanent_address }))
+                          }}
+                          className={`btn btn-sm border transition-all ${sameAsPermanent === true ? 'border-transparent text-[#f7f3ea] shadow-md' : 'border-[#0f3d2e] text-[#0f3d2e] bg-transparent hover:bg-[#0f3d2e]/10'}`}
+                          style={sameAsPermanent === true ? { background: 'linear-gradient(135deg, #0f3d2e 0%, #176a4d 100%)', boxShadow: '0 4px 12px rgba(15, 61, 46, 0.25)' } : {}}
+                        >
+                          Yes
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSameAsPermanent(false)}
+                          className={`btn btn-sm border transition-all ${sameAsPermanent === false ? 'border-transparent text-[#f7f3ea] shadow-md' : 'border-[#0f3d2e] text-[#0f3d2e] bg-transparent hover:bg-[#0f3d2e]/10'}`}
+                          style={sameAsPermanent === false ? { background: 'linear-gradient(135deg, #0f3d2e 0%, #176a4d 100%)', boxShadow: '0 4px 12px rgba(15, 61, 46, 0.25)' } : {}}
+                        >
+                          No
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Row 3: Gender, Civil Status, Birthdate */}
+              <div className="grid gap-4 md:grid-cols-3 mt-6">
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text">Gender *</span>
+                  </label>
                   <select
-                    name="position_applied_for"
-                    value={form.position_applied_for}
+                    name="gender"
+                    value={form.gender}
                     onChange={handleChange}
                     required
                     className="select select-bordered select-lg w-full bg-white transition-all duration-200 ease-out hover:-translate-y-0.5 focus:-translate-y-0.5 focus:shadow-lg"
                   >
-                    {[{ value: '', label: 'Select' }, ...positions.map((position) => ({
-                      value: position.title,
-                      label: position.title
-                    }))].map((option) => (
-                      <option key={`position-${option.value || 'empty'}`} value={option.value}>
+                    {genderOptions.map((option) => (
+                      <option key={`gender-${option.value || 'empty'}`} value={option.value}>
                         {option.label}
                       </option>
                     ))}
                   </select>
-                ) : (
-                  <input
-                    name="position_applied_for"
-                    value={form.position_applied_for}
+                  {form.gender === 'Other' && (
+                    <input
+                      type="text"
+                      value={customGender}
+                      onChange={e => setCustomGender(e.target.value)}
+                      placeholder="Please specify your gender"
+                      required
+                      maxLength={100}
+                      className="input input-bordered input-lg w-full bg-white mt-2 transition-all duration-200 ease-out hover:-translate-y-0.5 focus:-translate-y-0.5 focus:shadow-lg"
+                    />
+                  )}
+                </div>
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text">Civil status *</span>
+                  </label>
+                  <select
+                    name="civil_status"
+                    value={form.civil_status}
                     onChange={handleChange}
-                    placeholder="e.g., Frontend Developer"
                     required
-                    className="input input-bordered input-lg w-full bg-white transition-all duration-200 ease-out hover:-translate-y-0.5 focus:-translate-y-0.5 focus:shadow-lg"
-                  />
-                )}
-                <label className="label">
-                  {positionsError ? <span className="label-text-alt text-error">{positionsError}</span> : null}
-                </label>
-              </div>
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">Last name *</span>
-                </label>
-                <input className="input input-bordered input-lg w-full bg-white transition-all duration-200 ease-out hover:-translate-y-0.5 focus:-translate-y-0.5 focus:shadow-lg" name="last_name" value={form.last_name} onChange={handleChange} required />
-              </div>
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">First name *</span>
-                </label>
-                <input className="input input-bordered input-lg w-full bg-white transition-all duration-200 ease-out hover:-translate-y-0.5 focus:-translate-y-0.5 focus:shadow-lg" name="first_name" value={form.first_name} onChange={handleChange} required />
-              </div>
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">Middle name</span>
-                </label>
-                <input className="input input-bordered input-lg w-full bg-white transition-all duration-200 ease-out hover:-translate-y-0.5 focus:-translate-y-0.5 focus:shadow-lg" name="middle_name" value={form.middle_name} onChange={handleChange} />
-              </div>
-            </div>
-              <div className="form-control">
-              <label className="label">
-                <span className="label-text">Permanent address *</span>
-              </label>
-              <textarea
-                name="permanent_address"
-                value={form.permanent_address}
-                onChange={handleChange}
-                placeholder="Street, City, Province, ZIP"
-                required
-                className="textarea textarea-bordered textarea-lg min-h-[140px] w-full bg-white transition-all duration-200 ease-out hover:-translate-y-0.5 focus:-translate-y-0.5 focus:shadow-lg"
-              />
-            </div>
-              <div className="grid gap-4 lg:grid-cols-2">
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">Gender *</span>
-                </label>
-                <select
-                  name="gender"
-                  value={form.gender}
-                  onChange={handleChange}
-                  required
-                  className="select select-bordered select-lg w-full bg-white transition-all duration-200 ease-out hover:-translate-y-0.5 focus:-translate-y-0.5 focus:shadow-lg"
-                >
-                  {genderOptions.map((option) => (
-                    <option key={`gender-${option.value || 'empty'}`} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-                {form.gender === 'Other' && (
-                  <input
-                    type="text"
-                    value={customGender}
-                    onChange={e => setCustomGender(e.target.value)}
-                    placeholder="Please specify your gender"
+                    className="select select-bordered select-lg w-full bg-white transition-all duration-200 ease-out hover:-translate-y-0.5 focus:-translate-y-0.5 focus:shadow-lg"
+                  >
+                    {civilStatusOptions.map((option) => (
+                      <option key={`civil-${option.value || 'empty'}`} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text">Birthdate *</span>
+                  </label>
+                  <DatePicker
+                    name="birthdate"
+                    value={form.birthdate}
+                    onChange={handleChange}
                     required
-                    maxLength={100}
-                    className="input input-bordered input-lg w-full bg-white mt-2 transition-all duration-200 ease-out hover:-translate-y-0.5 focus:-translate-y-0.5 focus:shadow-lg"
+                    placeholder="Select birthdate"
+                    defaultYearOffset={-20}
                   />
-                )}
-              </div>
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">Civil status *</span>
-                </label>
-                <select
-                  name="civil_status"
-                  value={form.civil_status}
-                  onChange={handleChange}
-                  required
-                  className="select select-bordered select-lg w-full bg-white transition-all duration-200 ease-out hover:-translate-y-0.5 focus:-translate-y-0.5 focus:shadow-lg"
-                >
-                  {civilStatusOptions.map((option) => (
-                    <option key={`civil-${option.value || 'empty'}`} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">Birthdate *</span>
-                </label>
-                <DatePicker
-                  name="birthdate"
-                  value={form.birthdate}
-                  onChange={handleChange}
-                  required
-                  placeholder="Select birthdate"
-                />
-              </div>
-
+                </div>
               </div>
             </div>
             ) : null}
@@ -767,7 +833,7 @@ function ApplyPage() {
               </div>
               <div className="form-control">
                 <label className="label">
-                  <span className="label-text">Year graduated</span>
+                  <span className="label-text">Year graduated *</span>
                 </label>
                 <input
                   type="number"
@@ -777,6 +843,7 @@ function ApplyPage() {
                   onChange={handleChange}
                   min="1900"
                   max="2100"
+                  required
                 />
               </div>
               <div className="form-control">
@@ -801,7 +868,7 @@ function ApplyPage() {
               </div>
               <div className="form-control">
                 <label className="label">
-                  <span className="label-text">Total work experience (years)</span>
+                  <span className="label-text">Total work experience (years) *</span>
                 </label>
                 <input
                   type="number"
@@ -810,6 +877,7 @@ function ApplyPage() {
                   name="total_work_experience_years"
                   value={form.total_work_experience_years}
                   onChange={handleChange}
+                  required
                 />
               </div>
               </div>
@@ -864,13 +932,14 @@ function ApplyPage() {
               </div>
               <div className="form-control lg:col-span-2">
                 <label className="label">
-                  <span className="label-text">Where did you learn about this vacancy?</span>
+                  <span className="label-text">Where did you learn about this vacancy? *</span>
                 </label>
                 <select
                   name="vacancy_source"
                   value={form.vacancy_source}
                   onChange={handleChange}
                   className="select select-bordered select-lg w-full bg-white transition-all duration-200 ease-out hover:-translate-y-0.5 focus:-translate-y-0.5 focus:shadow-lg"
+                  required
                 >
                   {vacancySourceOptions.map((option) => (
                     <option key={`source-${option.value || 'empty'}`} value={option.value}>
@@ -914,6 +983,7 @@ function ApplyPage() {
                     <div className="review-item"><strong>Civil status</strong><span>{displayValue(form.civil_status)}</span></div>
                     <div className="review-item"><strong>Birthdate</strong><span>{displayValue(form.birthdate)}</span></div>
                     <div className="review-item review-item-full"><strong>Permanent address</strong><span>{displayValue(form.permanent_address)}</span></div>
+                    <div className="review-item review-item-full"><strong>Current address</strong><span>{displayValue(form.current_address)}</span></div>
                   </div>
                 </div>
 

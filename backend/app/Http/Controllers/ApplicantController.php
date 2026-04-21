@@ -344,6 +344,7 @@ class ApplicantController extends Controller
             'first_name' => [$required, 'string', 'max:255'],
             'middle_name' => ['nullable', 'string', 'max:255'],
             'permanent_address' => [$required, 'string', 'max:2000'],
+            'current_address' => [$required, 'string', 'max:2000'],
             'gender' => [$required, 'string', 'max:50'],
             'civil_status' => [$required, 'string', 'max:50'],
             'birthdate' => [$required, 'date'],

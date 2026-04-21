@@ -52,12 +52,13 @@ function buildGrid(year, month) {
 const YEAR_RANGE_BACK = 100
 const YEAR_RANGE_FORWARD = 10
 
-export default function DatePicker({ name, value, onChange, required, placeholder = 'Select date' }) {
+export default function DatePicker({ name, value, onChange, required, placeholder = 'Select date', defaultYearOffset = 0 }) {
   const today = new Date()
   const parsed = parseValue(value)
+  const defaultYear = today.getFullYear() + defaultYearOffset
 
   const [open, setOpen]           = useState(false)
-  const [viewYear, setViewYear]   = useState(parsed?.year  ?? today.getFullYear())
+  const [viewYear, setViewYear]   = useState(parsed?.year  ?? defaultYear)
   const [viewMonth, setViewMonth] = useState(parsed?.month ?? today.getMonth())
   const [popupStyle, setPopupStyle] = useState({})
 

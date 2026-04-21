@@ -22,6 +22,7 @@ class ApplicantFactory extends Factory
             'first_name' => $this->faker->firstName(),
             'middle_name' => $this->faker->optional()->firstName(),
             'permanent_address' => $this->faker->address(),
+            'current_address' => $this->faker->optional()->address(),
             'gender' => $this->faker->randomElement(['Male', 'Female', 'Other']),
             'civil_status' => $this->faker->randomElement(['Single', 'Married', 'Separated', 'Widowed']),
             'birthdate' => $this->faker->dateTimeBetween('-55 years', '-18 years')->format('Y-m-d'),
@@ -39,6 +40,8 @@ class ApplicantFactory extends Factory
             'cv_path' => null,
             'vacancy_source' => $this->faker->randomElement(['Facebook', 'LinkedIn', 'Referral', 'Website', 'Job Fair']),
             'status' => $this->faker->randomElement(['new', 'reviewed', 'shortlisted', 'rejected', 'hired']),
+            'created_at' => $this->faker->dateTimeBetween('-6 months', 'now'),
+            'updated_at' => now(),
         ];
     }
 }

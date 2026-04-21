@@ -17,6 +17,7 @@ class Applicant extends Model
         'first_name',
         'middle_name',
         'permanent_address',
+        'current_address',
         'gender',
         'civil_status',
         'birthdate',

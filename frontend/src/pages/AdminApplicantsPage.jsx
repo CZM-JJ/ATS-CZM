@@ -1324,7 +1324,8 @@ function AdminApplicantsPage() {
                         Personal
                       </div>
                       <div className="avm-pairs">
-                        <div className="avm-pair"><span>Address</span><strong>{safeValue(viewApplicant.permanent_address)}</strong></div>
+                        <div className="avm-pair"><span>Permanent Address</span><strong>{safeValue(viewApplicant.permanent_address)}</strong></div>
+                        <div className="avm-pair"><span>Current Address</span><strong>{safeValue(viewApplicant.current_address)}</strong></div>
                         <div className="avm-pair"><span>Gender</span><strong>{safeValue(viewApplicant.gender)}</strong></div>
                         <div className="avm-pair"><span>Civil status</span><strong>{safeValue(viewApplicant.civil_status)}</strong></div>
                         <div className="avm-pair"><span>Birthdate</span><strong>{formatDate(viewApplicant.birthdate)}</strong></div>

@@ -642,7 +642,8 @@ function AdminPage() {
           <h3>Contact</h3>
           <div class="row"><span class="k">Email</span><span class="v">${esc(selectedApplicant.email_address)}</span></div>
           <div class="row"><span class="k">Phone</span><span class="v">${esc(selectedApplicant.contact_number)}</span></div>
-          <div class="row"><span class="k">Address</span><span class="v">${esc(selectedApplicant.permanent_address)}</span></div>
+          <div class="row"><span class="k">Permanent Address</span><span class="v">${esc(selectedApplicant.permanent_address)}</span></div>
+          <div class="row"><span class="k">Current Address</span><span class="v">${esc(selectedApplicant.current_address)}</span></div>
           <div class="row"><span class="k">Gender</span><span class="v">${esc(selectedApplicant.gender)}</span></div>
           <div class="row"><span class="k">Civil Status</span><span class="v">${esc(selectedApplicant.civil_status)}</span></div>
           <div class="row"><span class="k">Birthdate</span><span class="v">${esc(selectedApplicant.birthdate ? new Date(selectedApplicant.birthdate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'N/A')}</span></div>
@@ -1021,8 +1022,12 @@ function AdminPage() {
                         <dd>{selectedApplicant.contact_number}</dd>
                       </div>
                       <div className="admin-field">
-                        <dt>Address</dt>
+                        <dt>Permanent Address</dt>
                         <dd>{selectedApplicant.permanent_address}</dd>
+                      </div>
+                      <div className="admin-field">
+                        <dt>Current Address</dt>
+                        <dd>{selectedApplicant.current_address}</dd>
                       </div>
                       <div className="admin-field">
                         <dt>Gender</dt>
