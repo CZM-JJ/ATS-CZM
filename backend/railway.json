@@ -1,0 +1,6 @@
+{
+  "build": {
+    "builder": "heroku.buildpacks"
+  },
+  "$schema": "https://railway.app/railway.schema.json"
+}
