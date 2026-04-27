@@ -1,28 +1,36 @@
-# OS
+*.log
 .DS_Store
-Thumbs.db
 
-# Editors
-.vscode/
-.idea/
-
-# Root-level env
-.env
+# Backend
 /backend/.env
+/backend/.env.backup
+/backend/.env.production
+/backend/.phpactor.json
+/backend/.phpunit.result.cache
+/backend/.fleet
+/backend/.idea
+/backend/.nova
+/backend/.phpunit.cache
+/backend/.zed
+/backend/auth.json
+/backend/node_modules
+/backend/public/build
+/backend/public/hot
+/backend/public/storage
+/backend/storage/*.key
+/backend/storage/pail
+/backend/vendor
+/backend/Homestead.json
+/backend/Homestead.yaml
+
+# Frontend
+/frontend/node_modules
+/frontend/dist
 /frontend/.env
-
-# Dependencies
-node_modules/
-backend/vendor/
-
-# Build outputs
-backend/storage/
-frontend/dist/
+/frontend/.env.local
 
 # IDE
-.vscode/
-.idea/
-
-# OS
+/.vscode
+/.idea
 .DS_Store
 Thumbs.db

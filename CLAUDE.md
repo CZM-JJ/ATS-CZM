@@ -43,6 +43,7 @@ npm run lint                        # Run ESLint
 ### Full Stack Development
 ```bash
 # From backend directory - runs Laravel server, queue worker, logs, and Vite
+cd backend
 composer run dev
 ```
 

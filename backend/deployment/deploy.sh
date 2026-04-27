@@ -1,7 +1,7 @@
 #!/bin/bash
 # ============================================================
 # ATS Production Deploy Script
-# Run this from the backend/ directory on your Linux server
+# Run this from the root directory on your Linux server
 # ============================================================
 
 set -e
@@ -10,6 +10,7 @@ echo "==> Pulling latest code..."
 git pull origin main
 
 echo "==> Installing Composer dependencies (no dev)..."
+cd backend
 composer install --no-dev --optimize-autoloader
 
 echo "==> Caching config, routes, views..."
