@@ -103,6 +103,7 @@ function AdminPage() {
       const params = new URLSearchParams(cleanFilters)
       const queryString = params.toString()
       const response = await fetch(`${apiBase}/api/applicants${queryString ? `?${queryString}` : ''}`, {
+        credentials: 'include',
         headers: { Authorization: `Bearer ${activeToken}` },
       })
 
@@ -119,6 +120,7 @@ function AdminPage() {
       if (preferredId !== null && !data.some((a) => a.id === preferredId)) {
         try {
           const applicantRes = await fetch(`${apiBase}/api/applicants/${preferredId}`, {
+            credentials: 'include',
             headers: { Authorization: `Bearer ${activeToken}` },
           })
           if (applicantRes.ok) {
@@ -154,6 +156,7 @@ function AdminPage() {
     setNotesError(null)
     try {
       const response = await fetch(`${apiBase}/api/applicants/${applicantId}/notes`, {
+        credentials: 'include',
         headers: { Authorization: `Bearer ${activeToken}` },
       })
 
@@ -247,6 +250,7 @@ function AdminPage() {
     setResumeError(null)
     try {
       const response = await fetch(`${apiBase}/api/applicants/${selectedId}/cv`, {
+        credentials: 'include',
         headers: { Authorization: `Bearer ${token}` },
       })
       if (!response.ok) throw new Error('Could not load resume.')
@@ -273,6 +277,7 @@ function AdminPage() {
     try {
       const response = await fetch(`${apiBase}/api/applicants/${selectedId}/notes`, {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
@@ -329,6 +334,7 @@ function AdminPage() {
     try {
       const res = await fetch(`${apiBase}/api/applicants/${deleteTarget.id}`, {
         method: 'DELETE',
+        credentials: 'include',
         headers: { Authorization: `Bearer ${token}` },
       })
       if (!res.ok) throw new Error()
@@ -368,6 +374,7 @@ function AdminPage() {
     try {
       const response = await fetch(`${apiBase}/api/applicants/${restoreTarget.id}/restore`, {
         method: 'PATCH',
+        credentials: 'include',
         headers: { Authorization: `Bearer ${token}` },
       })
       if (!response.ok) throw new Error()

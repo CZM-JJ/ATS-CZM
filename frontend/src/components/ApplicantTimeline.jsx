@@ -67,6 +67,7 @@ function ApplicantTimeline({ applicantId, token }) {
       setError(null)
       try {
         const response = await fetch(`${apiBase}/api/applicants/${applicantId}/timeline`, {
+          credentials: 'include',
           headers: { Authorization: `Bearer ${token}` },
         })
 

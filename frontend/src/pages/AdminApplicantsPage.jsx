@@ -282,6 +282,7 @@ function AdminApplicantsPage() {
     try {
       const response = await fetch(`${apiBase}/api/applicants/${applicantId}`, {
         method: 'PATCH',
+        credentials: 'include',
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -328,9 +329,11 @@ function AdminApplicantsPage() {
     try {
       const [applicantRes, notesRes] = await Promise.all([
         fetch(`${apiBase}/api/applicants/${applicantId}`, {
+          credentials: 'include',
           headers: { Authorization: `Bearer ${token}` },
         }),
         fetch(`${apiBase}/api/applicants/${applicantId}/notes`, {
+          credentials: 'include',
           headers: { Authorization: `Bearer ${token}` },
         }),
       ])
@@ -353,6 +356,7 @@ function AdminApplicantsPage() {
     if (!applicant?.id) return
     try {
       const res = await fetch(`${apiBase}/api/applicants/${applicant.id}/cv`, {
+        credentials: 'include',
         headers: { Authorization: `Bearer ${token}` },
       })
       if (!res.ok) throw new Error()
@@ -375,6 +379,7 @@ function AdminApplicantsPage() {
     try {
       const res = await fetch(`${apiBase}/api/applicants/${deleteTarget.id}`, {
         method: 'DELETE',
+        credentials: 'include',
         headers: { Authorization: `Bearer ${token}` },
       })
       if (!res.ok) throw new Error()
@@ -394,6 +399,7 @@ function AdminApplicantsPage() {
     try {
       const res = await fetch(`${apiBase}/api/applicants/${forceTarget.id}/force`, {
         method: 'DELETE',
+        credentials: 'include',
         headers: { Authorization: `Bearer ${token}` },
       })
       if (!res.ok) throw new Error()
@@ -418,6 +424,7 @@ function AdminApplicantsPage() {
     try {
       const res = await fetch(`${apiBase}/api/applicants/${restoreTarget.id}/restore`, {
         method: 'PATCH',
+        credentials: 'include',
         headers: { Authorization: `Bearer ${token}` },
       })
       if (!res.ok) throw new Error()
@@ -450,6 +457,7 @@ function AdminApplicantsPage() {
     try {
       const res = await fetch(`${apiBase}/api/applicants`, {
         method: 'DELETE',
+        credentials: 'include',
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -473,6 +481,7 @@ function AdminApplicantsPage() {
     try {
       const res = await fetch(`${apiBase}/api/applicants/restore`, {
         method: 'PATCH',
+        credentials: 'include',
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -496,6 +505,7 @@ function AdminApplicantsPage() {
     try {
       const res = await fetch(`${apiBase}/api/applicants/force`, {
         method: 'DELETE',
+        credentials: 'include',
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',

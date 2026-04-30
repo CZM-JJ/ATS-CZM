@@ -62,6 +62,7 @@ function AdminPositionsPage() {
     try {
       const res = await fetch(`${apiBase}/api/positions/bulk`, {
         method: 'DELETE',
+        credentials: 'include',
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -105,6 +106,7 @@ function AdminPositionsPage() {
     setError(null)
     try {
       const res = await fetch(`${apiBase}/api/positions/admin?page=${p}&per_page=20`, {
+        credentials: 'include',
         headers: { Authorization: `Bearer ${token}` },
       })
       if (!res.ok) throw new Error()
@@ -175,6 +177,7 @@ function AdminPositionsPage() {
       const method = editing ? 'PATCH' : 'POST'
       const res = await fetch(url, {
         method,
+        credentials: 'include',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       })
@@ -204,6 +207,7 @@ function AdminPositionsPage() {
     try {
       const res = await fetch(`${apiBase}/api/positions/${position.id}`, {
         method: 'PATCH',
+        credentials: 'include',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ is_active: !position.is_active }),
       })
@@ -223,6 +227,7 @@ function AdminPositionsPage() {
     try {
       const res = await fetch(`${apiBase}/api/positions/${deleteTarget.id}`, {
         method: 'DELETE',
+        credentials: 'include',
         headers: { Authorization: `Bearer ${token}` },
       })
       if (!res.ok) throw new Error()

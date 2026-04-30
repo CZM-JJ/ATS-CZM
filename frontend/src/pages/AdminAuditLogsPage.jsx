@@ -87,6 +87,7 @@ export default function AdminAuditLogsPage() {
     const params = new URLSearchParams({ page: p, per_page: pp })
     Object.entries(f).forEach(([k, v]) => { if (v) params.set(k, v) })
     fetch(`${apiBase}/api/audit-logs?${params}`, {
+      credentials: 'include',
       headers: { Authorization: `Bearer ${token}` },
     })
       .then(r => r.ok ? r.json() : Promise.reject(r.status))

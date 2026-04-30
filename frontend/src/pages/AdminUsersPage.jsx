@@ -96,7 +96,7 @@ export default function AdminUsersPage() {
   const load = async () => {
     setLoading(true); setError(null)
     try {
-      const res = await fetch(`${apiBase}/api/users`, { headers: { Authorization: `Bearer ${token}` } })
+      const res = await fetch(`${apiBase}/api/users`, { credentials: 'include', headers: { Authorization: `Bearer ${token}` } })
       if (!res.ok) throw new Error()
       setUsers(await res.json())
     } catch { setError('Failed to load users.') }
@@ -117,6 +117,7 @@ export default function AdminUsersPage() {
       if (editUser && !body.password) delete body.password
       const res = await fetch(editUser ? `${apiBase}/api/users/${editUser.id}` : `${apiBase}/api/users`, {
         method:  editUser ? 'PUT' : 'POST',
+        credentials: 'include',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         body:    JSON.stringify(body),
       })
@@ -140,6 +141,7 @@ export default function AdminUsersPage() {
     try {
       const res = await fetch(`${apiBase}/api/users/${deleteTarget.id}`, {
         method: 'DELETE', headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       })
       if (!res.ok) { const p = await res.json().catch(() => ({})); setError(p?.message || 'Failed to delete.'); return }
       setUsers(prev => prev.filter(u => u.id !== deleteTarget.id))
@@ -154,6 +156,7 @@ export default function AdminUsersPage() {
     try {
       const res = await fetch(`${apiBase}/api/settings/permissions`, {
         method: 'PUT',
+        credentials: 'include',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify(localPerms),
       })

@@ -275,6 +275,7 @@ function AdminAnalyticsPage() {
     try {
       const qs = period > 0 ? `?days=${period}` : ''
       const res = await fetch(`${apiBase}/api/dashboard/overview${qs}`, {
+        credentials: 'include',
         headers: { Authorization: `Bearer ${token}` },
       })
       if (!res.ok) throw new Error()

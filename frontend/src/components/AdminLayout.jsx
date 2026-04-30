@@ -45,6 +45,7 @@ export default function AdminLayout({ children, pageTitle }) {
     setNotifError(null)
     try {
       const res = await fetch(`${apiBase}/api/notifications`, {
+        credentials: 'include',
         headers: { Authorization: `Bearer ${token}` },
       })
       if (!res.ok) throw new Error()
@@ -109,6 +110,7 @@ export default function AdminLayout({ children, pageTitle }) {
     try {
       await fetch(`${apiBase}/api/notifications/${id}/read`, {
         method: 'PATCH',
+        credentials: 'include',
         headers: { Authorization: `Bearer ${token}` },
       })
       setNotifPayload((prev) => ({
@@ -125,6 +127,7 @@ export default function AdminLayout({ children, pageTitle }) {
     try {
       await fetch(`${apiBase}/api/notifications/read-all`, {
         method: 'PATCH',
+        credentials: 'include',
         headers: { Authorization: `Bearer ${token}` },
       })
       setNotifPayload((prev) => ({

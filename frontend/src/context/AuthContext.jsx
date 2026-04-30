@@ -26,6 +26,7 @@ export function AuthProvider({ children }) {
     }
 
     fetch(`${apiBase}/api/me`, {
+      credentials: 'include',
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => {
@@ -45,6 +46,7 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     if (!token) { setPermissions(PERMISSION_DEFAULTS); return }
     fetch(`${apiBase}/api/settings/permissions`, {
+      credentials: 'include',
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => res.ok ? res.json() : null)
@@ -61,6 +63,7 @@ export function AuthProvider({ children }) {
     if (token) {
       await fetch(`${apiBase}/api/logout`, {
         method: 'POST',
+        credentials: 'include',
         headers: { Authorization: `Bearer ${token}` },
       }).catch(() => {})
     }

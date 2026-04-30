@@ -321,6 +321,7 @@ function ApplyPage() {
     const loadPositions = async () => {
       try {
         const response = await fetch(`${apiBase}/api/positions`)
+        
 
         if (!response.ok) {
           throw new Error('Failed to load positions')

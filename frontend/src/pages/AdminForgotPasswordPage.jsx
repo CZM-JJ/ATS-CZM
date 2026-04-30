@@ -27,6 +27,7 @@ function AdminForgotPasswordPage() {
     try {
       const response = await fetch(`${apiBase}/api/forgot-password`, {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       })
